@@ -1,0 +1,202 @@
+// variables
+
+// background colors
+$background-color:  #18131f;
+$background-subtle: #221a2d;
+$background-strong: #2c213a;
+
+$background-hover:  #362847;
+$background-active: #46315c;
+
+// text colors
+$text-primary:   #f3ecff;
+$text-secondary: #cbb9e7;
+
+$text-muted:   #8f7aa8;
+$text-inverse: #000000;
+
+// font weights
+$weight-light:    300;
+$weight-regular:  400;
+$weight-medium:   500;
+$weight-semibold: 600;
+$weight-bold:     700;
+
+// border colors
+$border-color:  #4b3a61;
+$border-subtle: #372947;
+$border-strong: #6d5491;
+
+// accent colors
+$accent-primary:  #c85cff;
+$accent-secondary: #e0a8ff;
+
+$accent-hover:  #d875ff;
+$accent-active: #ab45dd;
+
+// status colors
+$success-color: #4cc38a;
+$warning-color: #ffb347;
+$error-color:   #ff5d73;
+$info-color:    #5ab7ff;
+
+// layout
+$navbar-height: 64px;
+$navbar-width:  95vw;
+$max-width:     1280px;
+
+// radius
+$radius-xs: 3px;
+$radius-sm: 6px;
+$radius-md: 12px;
+$radius-lg: 20px;
+$radius-xl: 9999px;
+
+// spacing
+$space-xs: 4px;
+$space-sm: 8px;
+$space-md: 16px;
+$space-lg: 24px;
+$space-xl: 32px;
+
+// font sizes
+$font-xs: clamp(0.7rem,  0.66rem + 0.2vw,  0.8rem);
+$font-sm: clamp(0.85rem, 0.8rem +  0.25vw, 0.95rem);
+$font-md: clamp(1rem,    0.95rem + 0.3vw,  1.1rem);
+$font-lg: clamp(1.25rem, 1.1rem +  0.7vw,  1.6rem);
+$font-xl: clamp(2rem,    1.6rem +  2vw,    3.5rem);
+
+// ordering
+$z1: 1;
+$z2: 10;
+$z3: 100;
+$z4: 1000;
+$z5: 10000;
+
+// text selection
+::selection {
+  background: $accent-primary;
+  color: $text-primary;
+}
+
+::-moz-selection {
+  background: $accent-primary;
+  color: $text-primary;
+}
+
+// scrollbar
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: $background-subtle;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $background-strong;
+  border-radius: $radius-xl;
+  border: 2px solid $background-subtle;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: $accent-primary;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: $accent-hover;
+}
+
+// root styles
+
+h1 {
+  font-size: $font-xl;
+  color: $text-primary;
+  font-weight: $weight-bold;
+}
+
+h2 {
+  font-size: $font-lg;
+  color: $text-primary;
+  font-weight: $weight-semibold;
+}
+
+h3 {
+  font-size: $font-md;
+  color: $text-secondary;
+  font-weight: $weight-medium;
+}
+
+h4 {
+  font-size: $font-sm;
+  color: $text-secondary;
+  font-weight: $weight-medium;
+}
+
+p, pre, code {
+  font-size: $font-sm;
+  color: $text-secondary;
+  font-weight: $weight-regular;
+}
+
+a {
+  color: $accent-primary;
+  font-size: $font-sm;
+  font-weight: $weight-medium;
+
+  text-decoration: none;
+  transition: color 0.15s ease;
+
+  &:hover  {color: $accent-hover;}
+  &:active {color: $accent-active;}
+}
+
+button {
+  background: $background-subtle;
+  font-size: $font-sm;
+  font-weight: $weight-medium;
+
+  border: 2px solid $border-color;
+  border-radius: $radius-md;
+}
+
+small {
+  font-size: $font-xs;
+  color: $text-muted;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  background: $background-color;
+  min-height: 100vh;
+}
+
+// global classes
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  gap: $space-sm;
+  padding: $space-sm $space-lg;
+
+  max-width: $max-width;
+}
+
+// all
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');   // Inter font
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');                  // Geist font
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap'); // Poppins font
+
+*, *::after, *::before {
+  $font-family: 'Poppins', sans-serif;
+
+  scrollbar-width: thin;
+  scrollbar-color: $background-strong $background-subtle;
+}

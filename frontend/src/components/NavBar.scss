@@ -1,0 +1,12 @@
+@use '../index.scss' as *;
+
+.navbar {
+    position: absolute;
+    width: $navbar-width;
+    height: $navbar-height;
+    left: calc((100vw - $navbar-width) / 2); // center
+
+    background: $background-strong;
+    border: 2px solid $border-strong;
+    border-radius: $radius-lg;
+}
