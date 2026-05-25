@@ -8,7 +8,7 @@
     position: absolute;
     width: $navbar-width;
     height: $navbar-height;
-    top: $navbar-height;
+    top: calc($navbar-height / 2);
 
     background: $background-strong;
     border: 2px solid $border-strong;
@@ -16,6 +16,19 @@
 
     padding: $space-md $space-md;
     gap: $space-md;
+
+    .nav-left {
+        display: flex;
+        flex-direction: row;
+        gap: $space-sm;
+    }
+
+    .nav-right {
+        display: flex;
+        flex-direction: row;
+        gap: $space-sm;
+        margin-left: auto;
+    }
 
     a {
         font-size: $font-lg;

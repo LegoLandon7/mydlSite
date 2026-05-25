@@ -9,9 +9,25 @@ export default function NavBar( {links = []} : navProp) {
     return (<>
 
     <nav className='navbar'>
-        {links.map(({ name, link }) => ( // map links to navlinks
-            <NavLink key={link} to={link}>{name}</NavLink>
-        ))}
+
+        <div className='nav-left'>
+
+            {links.map(({ name, link }) => ( // map links to navlinks
+                <NavLink key={link} to={link}>{name}</NavLink>
+            ))}
+            
+        </div>
+
+        <div className='nav-right'>
+
+            {links.map(({ name, link }) => ( // map links to navlinks
+                <NavLink key={link} to={link}>{name}</NavLink>
+            ))}
+
+        </div>
+
+        
+    
     </nav>
 
     </>);
