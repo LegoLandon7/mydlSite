@@ -1,0 +1,67 @@
+@use '../index.scss' as *;
+
+.dashboard {
+  padding: $space-xl;
+  max-width: $max-width;
+  margin: 0 auto;
+
+  h1 {
+    font-size: 2.5rem;
+    color: $text-primary;
+    margin-bottom: $space-xl;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: $space-xl;
+    color: $text-secondary;
+
+    p {
+      margin-bottom: $space-md;
+    }
+
+    button {
+      padding: $space-md $space-lg;
+      background: $accent-primary;
+      color: $text-inverse;
+      border: none;
+      border-radius: $radius-md;
+      font-size: $font-lg;
+      cursor: pointer;
+      transition: background 0.2s ease;
+
+      &:hover {
+        background: $accent-hover;
+      }
+    }
+  }
+
+  .groups-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: $space-md;
+
+    .group-card {
+      background: $background-strong;
+      border: 2px solid $border-strong;
+      border-radius: $radius-lg;
+      padding: $space-md;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: $accent-primary;
+        transform: translateY(-2px);
+      }
+
+      h2 {
+        margin: 0 0 $space-sm 0;
+        color: $text-primary;
+      }
+
+      p {
+        margin: $space-xs 0;
+        color: $text-secondary;
+      }
+    }
+  }
+}

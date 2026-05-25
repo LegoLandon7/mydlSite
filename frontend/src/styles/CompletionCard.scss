@@ -1,0 +1,75 @@
+@use '../index.scss' as *;
+
+.completion-card {
+  background: $background-strong;
+  border: 2px solid $border-strong;
+  border-radius: $radius-lg;
+  padding: $space-md;
+  transition: border-color 0.2s ease;
+
+  &.verified {
+    border-color: $success-color;
+  }
+
+  &.unverified {
+    border-color: $warning-color;
+  }
+
+  .completion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $space-md;
+
+    h4 {
+      margin: 0;
+      color: $text-primary;
+    }
+
+    .status-badge {
+      padding: $space-xs $space-sm;
+      border-radius: $radius-sm;
+      font-size: $font-sm;
+      font-weight: $weight-semibold;
+
+      &.verified {
+        background: rgba(76, 195, 138, 0.2);
+        color: $success-color;
+      }
+
+      &.pending {
+        background: rgba(255, 179, 71, 0.2);
+        color: $warning-color;
+      }
+    }
+  }
+
+  .completion-meta {
+    margin-bottom: $space-md;
+
+    p {
+      margin: $space-xs 0;
+      color: $text-secondary;
+      font-size: $font-sm;
+    }
+
+    strong {
+      color: $text-primary;
+    }
+  }
+
+  .video-link {
+    display: inline-block;
+    padding: $space-sm $space-md;
+    background: $info-color;
+    color: $text-inverse;
+    text-decoration: none;
+    border-radius: $radius-md;
+    transition: background 0.2s ease;
+    font-size: $font-sm;
+
+    &:hover {
+      background: darken($info-color, 10%);
+    }
+  }
+}

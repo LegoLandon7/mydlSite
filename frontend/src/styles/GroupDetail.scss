@@ -1,0 +1,96 @@
+@use '../index.scss' as *;
+
+.group-detail {
+  padding: $space-xl;
+  max-width: $max-width;
+  margin: 0 auto;
+
+  .group-header {
+    text-align: center;
+    margin-bottom: $space-xl;
+
+    h1 {
+      font-size: 2.5rem;
+      color: $text-primary;
+      margin-bottom: $space-sm;
+    }
+
+    p {
+      color: $text-secondary;
+      font-size: $font-lg;
+    }
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: $space-md;
+    margin-bottom: $space-xl;
+    flex-wrap: wrap;
+
+    button {
+      padding: $space-sm $space-lg;
+      background: $background-strong;
+      border: 2px solid $border-strong;
+      color: $text-secondary;
+      border-radius: $radius-md;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: $font-md;
+
+      &.active {
+        background: $accent-primary;
+        border-color: $accent-primary;
+        color: $text-inverse;
+      }
+
+      &:hover:not(.active) {
+        border-color: $accent-primary;
+      }
+    }
+  }
+
+  .list-section {
+    display: flex;
+    flex-direction: column;
+    gap: $space-md;
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: $space-md;
+      background: $background-strong;
+      border: 2px solid $border-strong;
+      border-radius: $radius-lg;
+      padding: $space-md;
+
+      .rank {
+        font-weight: $weight-bold;
+        color: $accent-primary;
+        min-width: 50px;
+        font-size: 1.2rem;
+      }
+
+      .demon-info {
+        flex: 1;
+
+        h3 {
+          margin: 0 0 $space-xs 0;
+          color: $text-primary;
+        }
+
+        .difficulty {
+          margin: 0;
+          color: $text-secondary;
+          font-size: $font-sm;
+        }
+      }
+    }
+  }
+
+  .completions-section {
+    display: flex;
+    flex-direction: column;
+    gap: $space-md;
+  }
+}

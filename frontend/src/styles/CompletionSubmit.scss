@@ -1,0 +1,64 @@
+@use '../index.scss' as *;
+
+.completion-submit {
+  display: flex;
+  gap: $space-sm;
+  width: 100%;
+
+  input {
+    flex: 1;
+    padding: $space-sm;
+    background: $background-subtle;
+    border: 2px solid $border-color;
+    border-radius: $radius-md;
+    color: $text-primary;
+    font-size: $font-sm;
+    transition: border-color 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: $accent-primary;
+    }
+
+    &::placeholder {
+      color: $text-muted;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  button {
+    padding: $space-sm $space-md;
+    background: $accent-primary;
+    color: $text-inverse;
+    border: none;
+    border-radius: $radius-md;
+    font-size: $font-sm;
+    font-weight: $weight-semibold;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background: $accent-hover;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .success {
+    color: $success-color;
+    font-weight: $weight-semibold;
+    animation: fadeOut 3s ease forwards;
+  }
+
+  @keyframes fadeOut {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+}

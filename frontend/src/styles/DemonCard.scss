@@ -1,0 +1,68 @@
+@use '../index.scss' as *;
+
+.demon-card {
+  background: $background-strong;
+  border: 2px solid $border-strong;
+  border-radius: $radius-lg;
+  padding: $space-md;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $accent-primary;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(200, 92, 255, 0.2);
+  }
+
+  .demon-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $space-md;
+
+    h3 {
+      margin: 0;
+      color: $text-primary;
+      font-size: $font-lg;
+      flex: 1;
+    }
+
+    .difficulty-badge {
+      background: $background-active;
+      color: $accent-primary;
+      padding: $space-sm $space-md;
+      border-radius: $radius-md;
+      font-weight: $weight-semibold;
+      white-space: nowrap;
+    }
+  }
+
+  .demon-meta {
+    margin-bottom: $space-md;
+
+    p {
+      margin: $space-xs 0;
+      color: $text-secondary;
+      font-size: $font-sm;
+    }
+
+    strong {
+      color: $text-primary;
+    }
+  }
+
+  .video-link {
+    display: inline-block;
+    margin-top: $space-sm;
+    padding: $space-sm $space-md;
+    background: $accent-primary;
+    color: $text-inverse;
+    text-decoration: none;
+    border-radius: $radius-md;
+    transition: background 0.2s ease;
+    font-size: $font-sm;
+
+    &:hover {
+      background: $accent-hover;
+    }
+  }
+}
