@@ -1,53 +1,17 @@
-import { useState, useEffect } from 'react';
-import '../styles/Home.scss';
-import { useDemonList } from '../hooks/useAREDL';
-import type { Demon } from '../hooks/useAREDL';
-import DemonCard from '../components/DemonCard';
+import LevelCard from '../components/LevelCard';
 
 export default function Home() {
-  const { demons, loading, error, fetchAllDemons, searchDemons } = useDemonList();
-  const [search, setSearch] = useState('');
-  const [filteredDemons, setFilteredDemons] = useState<Demon[]>([]);
-
-  useEffect(() => {
-    fetchAllDemons();
-  }, []);
-
-  useEffect(() => {
-    setFilteredDemons(demons);
-  }, [demons]);
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setSearch(query);
-    if (query.length > 2) {
-      searchDemons(query);
-    } else if (query.length === 0) {
-      setFilteredDemons(demons);
-    }
-  };
-
   return (
-    <div className="home">
-      <div className="search-section">
-        <h1>AREDL Demon Browser</h1>
-        <input
-          type="text"
-          placeholder="Search demons..."
-          value={search}
-          onChange={handleSearch}
-          className="search-input"
-        />
-      </div>
+    <>
+      <h1>MYODL - Make Your Own Demon List</h1>
+      <h2>View your demon list!</h2>
 
-      {error && <div className="error">{error}</div>}
-      {loading && <div className="loading">Loading demons...</div>}
-
-      <div className="demons-grid">
-        {filteredDemons.map(demon => (
-          <DemonCard key={demon.id} demon={demon} />
-        ))}
-      </div>
-    </div>
+      <LevelCard placement={1} aredlPlacement={767}
+      title="Bloodbath"
+      imageUrl="https://raw.githubusercontent.com/All-Rated-Extreme-Demon-List/Thumbnails/main/levels/cards/10565740.webp"/>
+      <LevelCard placement={2} aredlPlacement={1208}
+      title="Reanimate"
+      imageUrl="https://raw.githubusercontent.com/All-Rated-Extreme-Demon-List/Thumbnails/main/levels/cards/80335620.webp"/>
+    </>
   );
 }
