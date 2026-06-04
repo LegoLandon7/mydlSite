@@ -10,7 +10,7 @@
     padding: $space-lg $space-md;
 
     width: 90%;
-    height: 25vh;
+    height: 175px;
 
     display: flex;
     justify-content: space-between;
@@ -71,7 +71,7 @@
 
 @media (max-width: $mobile-breakpoint) {
     .level-card {
-        height: 10vh;
+        height: 100px;
         padding: $space-md;
 
         img {

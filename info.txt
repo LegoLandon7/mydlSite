@@ -1,0 +1,25 @@
+each user has their own personal list
+users can sync lists to a group which track group progress
+admins of these groups have to accept each submission when synced and each submission after
+users who join groups or sync with groups will see how many submissions are ahead of them
+users can unsync with groups and can join only a maximum
+
+level info on personal list shows global level info as well as some aredl stats
+level info on group list shows all completions and points
+
+groups levels have points ranging from 1 - 500 interpolated, if a new level is added then users keep the points they already got, or admins can change it to dynamically added points
+groups also have leaderboards and a submission page, personal lists dont need a submission page or request
+
+groups use aredl rankings or admins can edit rankings, personal lists can also use aredl rankings but users can opt in to move rankings how they wish
+if a level is shared with custom rankings it will still show aredl rank under each level no matter what (unless its an insane demon)
+
+there will be a toggle to show aredl rankings / personal rankings if a user does use custom rankings
+
+levels below extreme demon will require personal rankings to be enabled
+
+---navbar---
+
+navbar should have home showing all sources and information (no footers)
+navbar needs users which shows list of users that can be searched with pages in order of creation
+navbar also needs groups that can be searched as well in order of creation
+navbar then should have account login with dropdown showing personal list and groups

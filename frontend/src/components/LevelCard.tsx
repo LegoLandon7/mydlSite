@@ -13,12 +13,12 @@ type LevelCardProps = {
 };
 
 export default function LevelCard({
-    placement = 67,
-    aredlPlacement = 67,
-    title = "Level Name",
+    placement = 0,
+    aredlPlacement = 0,
+    title = "Unknown Level",
     imageUrl = placeHolderImage,
-    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    infoUrl = "/"
+    videoUrl = undefined,
+    infoUrl = undefined
 }: LevelCardProps) {
     return (
         <a className="level-card" style={{ backgroundImage: `url(${imageUrl})` }} href={infoUrl}>
@@ -30,6 +30,7 @@ export default function LevelCard({
                     <p>{`aredl #${aredlPlacement}`}</p>
                 </div>
             </div>
+            
             <div className="right">
                 {videoUrl && <a href={videoUrl} target="_blank" rel="noopener noreferrer">
                     <img src={playImage} alt="Play Video" />

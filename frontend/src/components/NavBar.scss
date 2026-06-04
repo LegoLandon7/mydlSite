@@ -1,0 +1,92 @@
+@use '../index.scss' as *;
+
+.navbar {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: $navbar-height;
+
+    background-color: $background-strong;
+    border-bottom: 2px solid $border-color;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 0 $space-lg;
+    margin-bottom: $space-lg;
+
+    //text-shadow: $text-shadow-sm;
+
+    .brand {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+
+        gap: $space-sm;
+
+        font-size: $font-lg;
+        color: $accent-primary;
+        font-weight: $weight-bold;
+
+        transition: color 0.3s ease;
+
+        &:hover {color: $accent-hover;}
+
+        img {
+            width: 48px;
+            height: 48px;
+            border-radius: $radius-md;
+        }
+    }
+
+    .nav-links {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+
+        gap: $space-lg;
+
+        a {
+            color: $text-primary;
+            font-size: $font-lg;
+
+            text-decoration: none;
+            transition: color 0.15s ease;
+
+            &:hover:not(.login-link) {color: $accent-hover;}
+            &.active {color: $accent-active;}
+        }
+
+        .login-link {
+            height: 48px;
+
+            background: $color-discord;
+            border: 2px solid $border-subtle;
+            border-radius: $radius-md;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+
+            padding: 0 $space-md;
+
+            transition: filter 0.3s ease;
+
+            &:hover {filter: brightness(0.8);}
+
+            img {
+                width: 20px;
+                height: 20px;
+                margin-right: $space-xs;
+                border-radius: $radius-xs;
+            }
+        }
+    }
+}
