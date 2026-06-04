@@ -1,0 +1,22 @@
+@use "../index.scss" as *;
+
+.flex-row {
+    display: flex;
+    flex-direction: row;
+}
+
+.flex-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.flex-wrap {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+@media (max-width: $mobile-breakpoint) {
+    .flex-row {
+        flex-direction: column;
+    }
+}

@@ -1,0 +1,58 @@
+// from llegonetwork.dev
+
+@use "../index.scss" as *;
+
+.card {
+    background: $background-subtle;
+    border-radius: $radius-lg;
+    border: 2px solid $border-color;
+    padding: $space-md $space-md;
+    margin: $space-sm;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: $space-md;
+
+    max-width: 90%;
+
+    img {
+        max-width: 15%;
+        border-radius: $radius-md;
+    }
+
+    .card-content {
+        display: flex;
+        flex-direction: column;
+        gap: $space-sm;
+
+        h2 {
+            font-size: $font-lg;
+            font-weight: $weight-bold;
+            color: $text-primary;
+        }
+
+        p {
+            font-size: $font-md;
+            color: $text-muted;
+        }
+
+        * { text-decoration: none; }
+
+        hr {
+            width: 75%;
+            border-radius: $radius-xl;
+            height: 2px;
+            margin: $space-sm;
+        }
+    }
+
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+
+    &:hover {
+        border-color: $accent-primary;
+        background: $background-hover;
+        transform: translateY(-2px);
+    }
+}

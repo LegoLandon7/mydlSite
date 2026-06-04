@@ -17,14 +17,11 @@
     align-items: center;
 
     padding: 0 $space-lg;
-    margin-bottom: $space-lg;
-
-    //text-shadow: $text-shadow-sm;
+    z-index: 1000;
 
     .brand {
         display: flex;
         flex-direction: row;
-        justify-content: center;
         align-items: center;
 
         gap: $space-sm;
@@ -32,10 +29,11 @@
         font-size: $font-lg;
         color: $accent-primary;
         font-weight: $weight-bold;
+        text-decoration: none;
 
-        transition: color 0.3s ease;
+        transition: color 0.2s ease;
 
-        &:hover {color: $accent-hover;}
+        &:hover { color: $accent-hover; }
 
         img {
             width: 48px;
@@ -47,46 +45,343 @@
     .nav-links {
         display: flex;
         flex-direction: row;
-        justify-content: center;
         align-items: center;
-
-        gap: $space-lg;
+        gap: $space-md;
 
         a {
             color: $text-primary;
             font-size: $font-lg;
-
             text-decoration: none;
-            transition: color 0.15s ease;
+            padding: $space-xs $space-sm;
+            border-radius: $radius-sm;
 
-            &:hover:not(.login-link) {color: $accent-hover;}
-            &.active {color: $accent-active;}
+            transition: color 0.15s ease, background 0.15s ease;
+
+            &:hover { color: $accent-hover; background: $border-color; }
+            &.active { color: $accent-active; background: $border-color; }
         }
+    }
 
-        .login-link {
+    .desktop-auth {
+        display: flex;
+        align-items: center;
+    }
+
+    .login-link {
+        height: 48px;
+        font-size: $font-md;
+        cursor: pointer;
+
+        color: $text-primary;
+        background: $color-discord;
+        border: 2px solid $border-subtle;
+        border-radius: $radius-md;
+
+        display: flex;
+        align-items: center;
+
+        padding: 0 $space-md;
+        gap: $space-xs;
+
+        text-decoration: none;
+        transition: filter 0.2s ease;
+
+        &:hover { filter: brightness(0.85); }
+
+        img {
+            width: 20px;
+            height: 20px;
+            border-radius: $radius-xs;
+        }
+    }
+
+    .user-menu {
+        position: relative;
+
+        .user-btn {
             height: 48px;
+            font-size: $font-md;
 
+            color: $text-primary;
             background: $color-discord;
             border: 2px solid $border-subtle;
             border-radius: $radius-md;
 
             display: flex;
-            justify-content: center;
             align-items: center;
-            text-align: center;
 
+            gap: $space-xs;
             padding: 0 $space-md;
 
-            transition: filter 0.3s ease;
+            cursor: pointer;
+            transition: filter 0.2s ease;
 
-            &:hover {filter: brightness(0.8);}
+            &:hover { filter: brightness(0.85); }
 
             img {
                 width: 20px;
                 height: 20px;
-                margin-right: $space-xs;
                 border-radius: $radius-xs;
             }
+
+            .chevron {
+                width: 16px;
+                height: 16px;
+                transition: transform 0.25s ease;
+
+                &.open { transform: rotate(180deg); }
+            }
         }
+
+        .dropdown {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+
+            background: $background-strong;
+            border: 2px solid $border-color;
+            border-radius: $radius-md;
+
+            padding: $space-xs;
+            min-width: 180px;
+
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+
+            z-index: 100;
+
+            opacity: 0;
+            transform: translateY(-6px);
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+
+            &.open {
+                opacity: 1;
+                transform: translateY(0);
+                pointer-events: all;
+            }
+
+            a, .logout-btn {
+                padding: $space-xs $space-sm;
+                border-radius: $radius-sm;
+
+                color: $text-primary;
+                font-size: $font-md;
+                text-decoration: none;
+
+                background: none;
+                border: none;
+                cursor: pointer;
+                text-align: left;
+                width: 100%;
+
+                transition: background 0.15s ease, color 0.15s ease;
+
+                &:hover { background: $border-color; color: $accent-hover; }
+                &.active { background: $border-color; color: $accent-active; }
+            }
+
+            hr {
+                border: none;
+                border-top: 1px solid $border-color;
+                margin: 2px 0;
+            }
+        }
+    }
+
+    .hamburger {
+        display: none;
+        position: relative;
+
+        .hamburger-btn {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            gap: 5px;
+            width: 40px;
+            height: 40px;
+
+            background: none;
+            border: 2px solid $border-subtle;
+            border-radius: $radius-sm;
+            cursor: pointer;
+            padding: $space-xs;
+
+            transition: border-color 0.2s ease;
+
+            &:hover { border-color: $accent-hover; }
+
+            span {
+                display: block;
+                width: 20px;
+                height: 2px;
+                background: $text-primary;
+                border-radius: 2px;
+
+                transition: transform 0.25s ease, opacity 0.25s ease;
+            }
+
+            &.open {
+                span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+                span:nth-child(2) { opacity: 0; }
+                span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+            }
+        }
+
+        .hamburger-menu {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 12px);
+
+            background: $background-strong;
+            border: 2px solid $border-color;
+            border-radius: $radius-md;
+
+            padding: $space-sm;
+            min-width: 220px;
+
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+
+            opacity: 0;
+            transform: translateY(-8px);
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+
+            &.open {
+                opacity: 1;
+                transform: translateY(0);
+                pointer-events: all;
+            }
+
+            > .login-link {
+                width: 100%;
+                box-sizing: border-box;
+                border-radius: $radius-sm;
+                margin-bottom: 2px;
+            }
+
+            .mobile-user {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+
+                .user-btn {
+                    width: 100%;
+                    height: 48px;
+                    font-size: $font-md;
+                    color: $text-primary;
+                    background: $color-discord;
+                    border: 2px solid $border-subtle;
+                    border-radius: $radius-sm;
+                    box-sizing: border-box;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-start;
+
+                    gap: $space-xs;
+                    padding: 0 $space-md;
+
+                    cursor: pointer;
+                    transition: filter 0.2s ease;
+
+                    &:hover { filter: brightness(0.85); }
+
+                    img {
+                        width: 20px;
+                        height: 20px;
+                        border-radius: $radius-xs;
+                    }
+
+                    .chevron {
+                        width: 16px;
+                        height: 16px;
+                        margin-left: auto;
+                        transition: transform 0.25s ease;
+
+                        &.open { transform: rotate(180deg); }
+                    }
+                }
+
+                .dropdown {
+                    position: static;
+                    opacity: 1;
+                    transform: none;
+                    pointer-events: all;
+                    border: none;
+                    border-radius: 0;
+                    padding: 0 0 0 $space-sm;
+                    background: none;
+                    max-height: 0;
+                    overflow: hidden;
+                    transition: max-height 0.25s ease;
+                    box-shadow: none;
+
+                    &.open { max-height: 300px; }
+
+                    a, .logout-btn {
+                        padding: $space-xs $space-sm;
+                        border-radius: $radius-sm;
+
+                        color: $text-primary;
+                        font-size: $font-md;
+                        text-decoration: none;
+
+                        background: none;
+                        border: none;
+                        cursor: pointer;
+                        text-align: left;
+                        width: 100%;
+
+                        display: block;
+                        box-sizing: border-box;
+
+                        transition: background 0.15s ease, color 0.15s ease;
+
+                        &:hover { background: $border-color; color: $accent-hover; }
+                        &.active { background: $border-color; color: $accent-active; }
+                    }
+
+                    hr {
+                        border: none;
+                        border-top: 1px solid $border-color;
+                        margin: 2px 0;
+                    }
+                }
+            }
+
+            .menu-divider {
+                border: none;
+                border-top: 1px solid $border-color;
+                margin: $space-xs 0;
+            }
+
+            > a {
+                color: $text-primary;
+                font-size: $font-md;
+                text-decoration: none;
+                padding: $space-xs $space-sm;
+                border-radius: $radius-sm;
+
+                transition: background 0.15s ease, color 0.15s ease;
+
+                &:hover { background: $border-color; color: $accent-hover; }
+                &.active { background: $border-color; color: $accent-active; }
+            }
+        }
+    }
+
+    @media (max-width: $mobile-breakpoint) {
+        .nav-links { display: none; }
+
+        > .login-link,
+        > .user-menu { display: none; }
+
+        .hamburger { display: block; }
     }
 }
