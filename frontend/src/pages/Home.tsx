@@ -1,8 +1,11 @@
 import LevelCard from '../components/LevelCard';
 import SiteHeader from '../components/SiteHeader';
 import Card from '../components/Card';
+import SiteSection from '../components/SiteSection';
 
 import '../util/containers.scss';
+
+import PlaceHolderImage from '../assets/images/placeholder.png';
 
 export default function Home() {
   return (
@@ -10,7 +13,13 @@ export default function Home() {
 
     <SiteHeader 
     head="Make Your Own Demon List (MYODL)" 
-    subhead="A website to collaberate and track demon progression" />
+    subhead="A website to collaborate and track demon progression" />
+    
+    <SiteSection
+      head="About MYODL"
+      subhead="MYODL is a website created to track demon-progression for individual users or entire groups of users! You can track a custom leaderboard for a friend group, Discord server, or any other group of players. MYODL also serves as a platform for users to collaborate and share their demon progression with others publicly. "
+      imageUrl={PlaceHolderImage}
+    />
 
     <div className="flex-row">
       <Card
@@ -27,7 +36,20 @@ export default function Home() {
       linkUrl="https://github.com/"
       newTab={true}/>
     </div>
-    
+
+    <SiteHeader 
+    head="Personal Demon List" 
+    subhead="A list of your personal demon completions" />
+
+    <LevelCard placement={1} aredlPlacement={767}
+    title="Bloodbath"
+    imageUrl="https://raw.githubusercontent.com/All-Rated-Extreme-Demon-List/Thumbnails/main/levels/cards/10565740.webp"/>
+
+    <LevelCard placement={2} aredlPlacement={1208}
+    title="Reanimate"
+    imageUrl="https://raw.githubusercontent.com/All-Rated-Extreme-Demon-List/Thumbnails/main/levels/cards/80335620.webp"/>
+
+    <LevelCard />
 
     </>
   );

@@ -219,11 +219,11 @@ small {
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
+  min-height: 100vh; 
 }
 
 body {
   background: $background-color;
-  min-height: 100vh;
 }
 
 // global classes
@@ -239,6 +239,7 @@ body {
 
   width: 100%;
   max-width: $max-width;
+
   margin: 0 auto;
   margin-top: $navbar-height;
 }
