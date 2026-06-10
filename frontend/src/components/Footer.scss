@@ -9,6 +9,7 @@
     justify-content: space-between;
     background-color: $background-strong;
     border-top: 2px solid $border-strong;
+    z-index: 1000;
 
     .footer-left {
         font-size: $font-md;

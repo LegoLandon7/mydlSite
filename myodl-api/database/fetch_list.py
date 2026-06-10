@@ -37,17 +37,18 @@ async def populate_database():
         for entry in list_data:
             
             await db.execute('''
-                INSERT OR REPLACE INTO levels (level_id, name, position, link)
-                VALUES (?, ?, ?, ?)
+                INSERT OR REPLACE INTO levels (level_id, name, position, link, description)
+                VALUES (?, ?, ?, ?, ?)
             ''', (
                 entry.get("level_id"),
                 entry.get("name"),
                 entry.get("position"),
-                f"https://aredl.net/list/{entry.get('level_id')}"
+                f"https://aredl.net/list/{entry.get('level_id')}",
+                entry.get("description"),
             ))
 
             await db.commit()
-            print(f"Successfully synced {len(list_data)} levels to the database.")
+        print(f"Successfully synced {len(list_data)} levels to the database.")
 
 if __name__ == "__main__":
     import asyncio

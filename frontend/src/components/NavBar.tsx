@@ -10,7 +10,6 @@ export default function NavBar() {
     const [loggedIn, setLoggedIn] = useState(false);
     const [username, setUsername] = useState<string>('');
     const [avatar, setAvatar] = useState<string>('');
-    const [email, setEmail] = useState<string>('');
     const [desktopDropdownOpen, setDesktopDropdownOpen] = useState(false);
     const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
     const [hamburgerOpen, setHamburgerOpen] = useState(false);
@@ -43,13 +42,11 @@ export default function NavBar() {
             setLoggedIn(data.authenticated);
             if (data.authenticated) {
                 setUsername(data.username || '');
-                setEmail(data.email || '');
                 if (data.avatar) {
                     setAvatar(`https://cdn.discordapp.com/avatars/${data.username}/${data.avatar}.png`);
                 }
             } else {
                 setUsername('');
-                setEmail('');
                 setAvatar('');
             }
         } catch (error) {
