@@ -1,2 +1,2 @@
 # mydlSite
-MYDL - Make Your Demon List
+MYODL - Make Your Own Demon List

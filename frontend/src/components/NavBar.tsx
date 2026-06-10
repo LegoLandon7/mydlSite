@@ -1,16 +1,56 @@
 import './NavBar.scss';
 
 import PlaceHolderLogo from '../assets/images/placeholder.png';
-import { NavLink } from 'react-router';
+import { NavLink, useNavigate } from 'react-router';
 import { useState, useRef, useEffect } from 'react';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export default function NavBar() {
     const [loggedIn, setLoggedIn] = useState(false);
+    const [username, setUsername] = useState<string>('');
     const [desktopDropdownOpen, setDesktopDropdownOpen] = useState(false);
     const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
     const [hamburgerOpen, setHamburgerOpen] = useState(false);
     const desktopMenuRef = useRef<HTMLDivElement>(null);
     const hamburgerRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
+
+    // Check for login callback in URL and update auth status
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const loginParam = params.get('login');
+        
+        if (loginParam === 'success') {
+            setLoggedIn(true);
+            checkAuth();
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (loginParam === 'failed') {
+            console.error('Discord login failed');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }, []);
+
+    // Check authentication status on mount and periodically
+    const checkAuth = async () => {
+        try {
+            const response = await fetch(`${API_URL}/auth/status`, {
+                credentials: 'include'
+            });
+            const data = await response.json();
+            setLoggedIn(data.authenticated);
+            if (data.username) {
+                setUsername(data.username);
+            }
+        } catch (error) {
+            console.error('Auth check failed:', error);
+            setLoggedIn(false);
+        }
+    };
+
+    useEffect(() => {
+        checkAuth();
+    }, []);
 
     useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
@@ -31,6 +71,27 @@ export default function NavBar() {
         setMobileDropdownOpen(false);
     };
 
+    const handleLogin = () => {
+        // Redirect to backend login endpoint
+        window.location.href = `${API_URL}/auth/login`;
+    };
+
+    const handleLogout = async () => {
+        try {
+            await fetch(`${API_URL}/auth/logout`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            setLoggedIn(false);
+            setUsername('');
+            setDesktopDropdownOpen(false);
+            closeAll();
+            navigate('/');
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
+    };
+
     const navLinks = (onClick?: () => void) => (
         <>
             <NavLink to="/" onClick={onClick}>Home</NavLink>
@@ -45,14 +106,14 @@ export default function NavBar() {
             <NavLink to="/personal/list" onClick={onLinkClick}>Personal List</NavLink>
             <NavLink to="/personal/groups" onClick={onLinkClick}>Active Groups</NavLink>
             <hr />
-            <button className="logout-btn" onClick={() => { setLoggedIn(false); onLinkClick(); }}>Logout</button>
+            <button className="logout-btn" onClick={() => { handleLogout(); onLinkClick(); }}>Logout</button>
         </div>
     );
 
     const userButton = (open: boolean, onToggle: () => void) => (
         <button className="user-btn" onClick={onToggle}>
             <img src={PlaceHolderLogo} alt="avatar" />
-            Username
+            {username || 'User'}
             <svg
                 className={`chevron ${open ? 'open' : ''}`}
                 viewBox="0 0 24 24"
@@ -82,7 +143,7 @@ export default function NavBar() {
                     {profileDropdown(desktopDropdownOpen, () => setDesktopDropdownOpen(false))}
                 </div>
             ) : (
-                <a className="login-link" onClick={(e) => { e.preventDefault(); setLoggedIn(true); }}>
+                <a className="login-link" onClick={handleLogin}>
                     <img src={PlaceHolderLogo} alt="Discord" />
                     Login
                 </a>
@@ -102,7 +163,7 @@ export default function NavBar() {
                             {profileDropdown(mobileDropdownOpen, closeAll)}
                         </div>
                     ) : (
-                        <a className="login-link" onClick={(e) => { e.preventDefault(); setLoggedIn(true); closeAll(); }}>
+                        <a className="login-link" onClick={(e) => { e.preventDefault(); handleLogin(); closeAll(); }}>
                             <img src={PlaceHolderLogo} alt="Discord" />
                             Login
                         </a>

@@ -4,3 +4,5 @@ httpx
 itsdangerous
 aiosqlite
 python-multipart
+python-dotenv
+authlib

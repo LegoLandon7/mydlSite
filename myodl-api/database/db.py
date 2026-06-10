@@ -1,9 +1,9 @@
 import aiosqlite
 
-DB = "app.db"
+DB = "data/app.db"
 
 async def init_db():
-    with open("schema.sql") as f:
+    with open("database/schema.sql") as f:
         schema = f.read()
     async with aiosqlite.connect(DB) as db:
         await db.executescript(schema)
