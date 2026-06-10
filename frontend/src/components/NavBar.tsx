@@ -9,6 +9,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 export default function NavBar() {
     const [loggedIn, setLoggedIn] = useState(false);
     const [username, setUsername] = useState<string>('');
+    const [avatar, setAvatar] = useState<string>('');
+    const [email, setEmail] = useState<string>('');
     const [desktopDropdownOpen, setDesktopDropdownOpen] = useState(false);
     const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
     const [hamburgerOpen, setHamburgerOpen] = useState(false);
@@ -39,8 +41,16 @@ export default function NavBar() {
             });
             const data = await response.json();
             setLoggedIn(data.authenticated);
-            if (data.username) {
-                setUsername(data.username);
+            if (data.authenticated) {
+                setUsername(data.username || '');
+                setEmail(data.email || '');
+                if (data.avatar) {
+                    setAvatar(`https://cdn.discordapp.com/avatars/${data.username}/${data.avatar}.png`);
+                }
+            } else {
+                setUsername('');
+                setEmail('');
+                setAvatar('');
             }
         } catch (error) {
             console.error('Auth check failed:', error);
@@ -84,6 +94,8 @@ export default function NavBar() {
             });
             setLoggedIn(false);
             setUsername('');
+            setEmail('');
+            setAvatar('');
             setDesktopDropdownOpen(false);
             closeAll();
             navigate('/');
@@ -112,7 +124,7 @@ export default function NavBar() {
 
     const userButton = (open: boolean, onToggle: () => void) => (
         <button className="user-btn" onClick={onToggle}>
-            <img src={PlaceHolderLogo} alt="avatar" />
+            <img src={avatar || PlaceHolderLogo} alt="avatar" />
             {username || 'User'}
             <svg
                 className={`chevron ${open ? 'open' : ''}`}
