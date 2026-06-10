@@ -1,6 +1,6 @@
 import aiosqlite
 
-DB = "data/app.db"
+DB = "data/mydol.db"
 
 async def init_db():
     with open("database/schema.sql") as f:

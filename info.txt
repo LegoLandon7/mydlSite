@@ -19,7 +19,11 @@ levels below extreme demon will require personal rankings to be enabled
 
 ---navbar---
 
-navbar should have home showing all sources and information (no footers)
+navbar should have home showing all sources and information
 navbar needs users which shows list of users that can be searched with pages in order of creation
 navbar also needs groups that can be searched as well in order of creation
 navbar then should have account login with dropdown showing personal list and groups
+
+--groups--
+
+groups can be public or private, public to join or request only

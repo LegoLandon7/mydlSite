@@ -5,4 +5,5 @@
 data/
 database/__pycache__
 routers/__pycache__
+util/__pycache__
 __pycache__

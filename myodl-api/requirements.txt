@@ -6,3 +6,5 @@ aiosqlite
 python-multipart
 python-dotenv
 authlib
+requests
+slowapi
