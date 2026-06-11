@@ -14,7 +14,7 @@ type LevelCardProps = {
 
 export default function LevelCard({
     placement = 0,
-    aredlPlacement = 0,
+    aredlPlacement = undefined,
     title = "Unknown Level",
     imageUrl = placeHolderImage,
     videoUrl = undefined,
@@ -27,7 +27,7 @@ export default function LevelCard({
 
                 <div className="level-info">
                     <h1>{title}</h1>
-                    <p>{`aredl #${aredlPlacement}`}</p>
+                    {aredlPlacement && <p>{`aredl #${aredlPlacement}`}</p>}
                 </div>
             </div>
             

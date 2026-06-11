@@ -3,7 +3,9 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import Home from './pages/Home';
-import List from './pages/List'
+import List from './pages/List';
+import Users from './pages/Users';
+import Groups from './pages/Groups';
 
 import NavBar from './components/NavBar';
 import Footer from './components/Footer';
@@ -22,6 +24,11 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/" element={<Home />} />
           <Route path="/list" element={<List />} />
           <Route path="/list/:id" element={<List />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/users/:id" element={<Users />} />
+          <Route path="/groups" element={<Groups />} />
+          <Route path="/groups/:id" element={<Groups />} />
+          <Route path="/groups/user/:id" element={<Groups />} />
         </Routes>
       </div>
       <Footer />

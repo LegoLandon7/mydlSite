@@ -71,11 +71,17 @@
 
 @media (max-width: $mobile-breakpoint) {
     .level-card {
-        height: 100px;
+        height: 75px;
         padding: $space-md;
 
         img {
             width: 40px;
+        }
+
+        .left, .right { 
+            h1 {
+                font-size: $font-md;
+            }
         }
     }
 }

@@ -3,19 +3,19 @@ import './SiteSection.scss';
 type SiteSectionProps = {
     head: string;
     subhead: string;
-    imageUrl?: string;
+    imageUrl?: string | null;
     align?: 'left' | 'right' | 'default';
 };
 
 export default function SiteSection({
     head,
     subhead,
-    imageUrl,
+    imageUrl = null,
     align = 'default',
 }: SiteSectionProps) {
     return (
         <header className='site-section'>
-            {(imageUrl && align === 'default' || align === 'left') && <img src={imageUrl}/>}
+            {imageUrl && (align === 'default' || align === 'left') && (<img src={imageUrl} alt="" />)}
 
             <div className='section-content'>
                 <h1>{"" + head}</h1>

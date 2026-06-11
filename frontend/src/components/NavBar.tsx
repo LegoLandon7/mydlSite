@@ -1,3 +1,5 @@
+// AI assisted
+
 import './NavBar.scss';
 
 import PlaceHolderLogo from '../assets/images/placeholder.png';
@@ -7,15 +9,24 @@ import { useState, useRef, useEffect } from 'react';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export default function NavBar() {
-    const [loggedIn, setLoggedIn] = useState(false);
-    const [username, setUsername] = useState('');
-    const [avatar, setAvatar] = useState('');
-    const [desktopDropdownOpen, setDesktopDropdownOpen] = useState(false);
-    const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
-    const [hamburgerOpen, setHamburgerOpen] = useState(false);
+    const [loggedIn, setLoggedIn]               = useState(false);
+    const [username, setUsername]               = useState('');
+    const [discordId, setDiscordId]             = useState('');
+    const [avatar, setAvatar]                   = useState('');
+    const [desktopDropdown, setDesktopDropdown] = useState(false);
+    const [mobileDropdown, setMobileDropdown]   = useState(false);
+    const [hamburgerOpen, setHamburgerOpen]     = useState(false);
+
     const desktopMenuRef = useRef<HTMLDivElement>(null);
-    const hamburgerRef = useRef<HTMLDivElement>(null);
-    const navigate = useNavigate();
+    const hamburgerRef   = useRef<HTMLDivElement>(null);
+    const navigate       = useNavigate();
+
+    const clearAuth = () => {
+        setLoggedIn(false);
+        setUsername('');
+        setAvatar('');
+        setDiscordId('');
+    };
 
     const checkAuth = async () => {
         try {
@@ -25,44 +36,18 @@ export default function NavBar() {
                 setLoggedIn(true);
                 setUsername(data.username || '');
                 setAvatar(data.avatar_url || '');
+                setDiscordId(data.discord_id || '');
             } else {
-                setLoggedIn(false);
-                setUsername('');
-                setAvatar('');
+                clearAuth();
             }
         } catch {
-            setLoggedIn(false);
+            clearAuth();
         }
     };
 
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const loginParam = params.get('login');
-        if (loginParam === 'success') {
-            window.history.replaceState({}, document.title, window.location.pathname);
-        } else if (loginParam === 'failed') {
-            console.error('Discord login failed');
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-        checkAuth();
-    }, []);
-
-    useEffect(() => {
-        function handleClickOutside(e: MouseEvent) {
-            if (desktopMenuRef.current && !desktopMenuRef.current.contains(e.target as Node))
-                setDesktopDropdownOpen(false);
-            if (hamburgerRef.current && !hamburgerRef.current.contains(e.target as Node)) {
-                setHamburgerOpen(false);
-                setMobileDropdownOpen(false);
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
     const closeAll = () => {
         setHamburgerOpen(false);
-        setMobileDropdownOpen(false);
+        setMobileDropdown(false);
     };
 
     const handleLogin = () => {
@@ -76,23 +61,37 @@ export default function NavBar() {
         } catch {
             console.error('Logout failed');
         } finally {
-            setLoggedIn(false);
-            setUsername('');
-            setAvatar('');
-            setDesktopDropdownOpen(false);
+            clearAuth();
+            setDesktopDropdown(false);
             closeAll();
             navigate('/');
         }
     };
 
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('login') === 'success') {
+        const params     = new URLSearchParams(window.location.search);
+        const loginParam = params.get('login');
+
+        if (loginParam === 'success') {
             window.history.replaceState({}, document.title, window.location.pathname);
             setTimeout(checkAuth, 200);
+        } else if (loginParam === 'failed') {
+            console.error('Discord login failed');
+            window.history.replaceState({}, document.title, window.location.pathname);
         } else {
             checkAuth();
         }
+    }, []);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (desktopMenuRef.current && !desktopMenuRef.current.contains(e.target as Node))
+                setDesktopDropdown(false);
+            if (hamburgerRef.current && !hamburgerRef.current.contains(e.target as Node))
+                closeAll();
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     const navLinks = (onClick?: () => void) => (
@@ -106,8 +105,8 @@ export default function NavBar() {
 
     const profileDropdown = (open: boolean, onLinkClick: () => void) => (
         <div className={`dropdown ${open ? 'open' : ''}`}>
-            <NavLink to="/personal/list" onClick={onLinkClick}>Personal List</NavLink>
-            <NavLink to="/personal/groups" onClick={onLinkClick}>Active Groups</NavLink>
+            <NavLink to={`/users/${discordId}`} onClick={onLinkClick}>My Profile</NavLink>
+            <NavLink to={`/groups/user/${discordId}`} onClick={onLinkClick}>My Groups</NavLink>
             <hr />
             <button className="logout-btn" onClick={() => { handleLogout(); onLinkClick(); }}>Logout</button>
         </div>
@@ -123,6 +122,13 @@ export default function NavBar() {
         </button>
     );
 
+    const loginButton = (onClick?: () => void) => (
+        <a className="login-link" onClick={(e) => { e.preventDefault(); handleLogin(); onClick?.(); }}>
+            <img src={PlaceHolderLogo} alt="Discord" />
+            Login
+        </a>
+    );
+
     return (
         <nav className="navbar">
             <a href="/" className="brand">
@@ -136,14 +142,11 @@ export default function NavBar() {
 
             {loggedIn ? (
                 <div className="user-menu" ref={desktopMenuRef}>
-                    {userButton(desktopDropdownOpen, () => setDesktopDropdownOpen(prev => !prev))}
-                    {profileDropdown(desktopDropdownOpen, () => setDesktopDropdownOpen(false))}
+                    {userButton(desktopDropdown, () => setDesktopDropdown(prev => !prev))}
+                    {profileDropdown(desktopDropdown, () => setDesktopDropdown(false))}
                 </div>
             ) : (
-                <a className="login-link" onClick={handleLogin}>
-                    <img src={PlaceHolderLogo} alt="Discord" />
-                    Login
-                </a>
+                loginButton()
             )}
 
             <div className="hamburger" ref={hamburgerRef}>
@@ -154,14 +157,11 @@ export default function NavBar() {
                 <div className={`hamburger-menu ${hamburgerOpen ? 'open' : ''}`}>
                     {loggedIn ? (
                         <div className="mobile-user">
-                            {userButton(mobileDropdownOpen, () => setMobileDropdownOpen(prev => !prev))}
-                            {profileDropdown(mobileDropdownOpen, closeAll)}
+                            {userButton(mobileDropdown, () => setMobileDropdown(prev => !prev))}
+                            {profileDropdown(mobileDropdown, closeAll)}
                         </div>
                     ) : (
-                        <a className="login-link" onClick={(e) => { e.preventDefault(); handleLogin(); closeAll(); }}>
-                            <img src={PlaceHolderLogo} alt="Discord" />
-                            Login
-                        </a>
+                        loginButton(closeAll)
                     )}
                     <hr className="menu-divider" />
                     {navLinks(closeAll)}

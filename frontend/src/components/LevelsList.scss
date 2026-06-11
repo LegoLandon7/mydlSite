@@ -12,7 +12,7 @@
 
     display: flex;
     flex-direction: row;
-    overflow: hidden;
+    overflow-x: hidden;
 }
 
 .loading-state,
@@ -214,7 +214,7 @@
 .level-details {
     flex: 1;
     height: 100%;
-    overflow: hidden;
+    overflow-y: scroll;
 
     position: relative;
     background-color: $background-color;
@@ -278,7 +278,7 @@
                 font-size: $font-sm;
                 font-weight: $weight-medium;
                 transition: opacity 0.2s ease;
-                margin: 0 $space-sm;
+                margin: $space-sm $space-sm;
 
                 &:hover {
                     opacity: 0.8;
@@ -314,8 +314,7 @@
     .list-container {
         flex-direction: column;
         min-height: calc(100vh - 140px);
-        border-radius: 0;
-        border: none;
+        border-radius: $radius-sm;
     }
 
     .levels-list-container {

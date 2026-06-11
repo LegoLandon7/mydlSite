@@ -7,7 +7,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get("/")
-@limiter.limit("10/minute")
+@limiter.limit("60/minute")
 async def get_all_users(request: Request, page: int = 1):
     if page < 1:
         raise HTTPException(status_code=400, detail="Page must be 1 or greater")
@@ -30,7 +30,7 @@ async def get_all_users(request: Request, page: int = 1):
 
 
 @router.get("/search")
-@limiter.limit("30/minute")
+@limiter.limit("60/minute")
 async def search_users(request: Request, q: str):
     if len(q) < 2:
         raise HTTPException(status_code=400, detail="Query too short")
@@ -45,7 +45,7 @@ async def search_users(request: Request, q: str):
 
 
 @router.get("/{discord_id}")
-@limiter.limit("30/minute")
+@limiter.limit("60/minute")
 async def get_user(request: Request, discord_id: str):
     async with aiosqlite.connect(DB) as db:
         db.row_factory = aiosqlite.Row
