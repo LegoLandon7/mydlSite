@@ -13,8 +13,8 @@ oauth = OAuth()
 
 DISCORD_CLIENT_ID     = os.getenv("DISCORD_CLIENT_ID")
 DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
-DISCORD_REDIRECT_URI  = os.getenv("DISCORD_REDIRECT_URI", "http://localhost:8000/auth/callback")
-FRONTEND_URL          = os.getenv("FRONTEND_URL", "http://localhost:5173")
+DISCORD_REDIRECT_URI  = os.getenv("DISCORD_REDIRECT_URI", "http://api.myodl.net/auth/callback")
+FRONTEND_URL          = os.getenv("FRONTEND_URL", "https://myodl.net")
 
 if DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET:
     oauth.register(

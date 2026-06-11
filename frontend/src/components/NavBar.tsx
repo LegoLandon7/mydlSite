@@ -6,7 +6,7 @@ import PlaceHolderLogo from '../assets/images/placeholder.png';
 import { NavLink, useNavigate } from 'react-router';
 import { useState, useRef, useEffect } from 'react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function NavBar() {
     const [loggedIn, setLoggedIn]               = useState(false);

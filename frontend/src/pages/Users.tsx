@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import UsersList from '../components/UsersList';
 import '../components/UsersList.scss';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL;
 
 type User = {
     discord_id: string;
