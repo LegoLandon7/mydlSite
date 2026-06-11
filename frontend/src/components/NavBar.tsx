@@ -6,7 +6,7 @@ import PlaceHolderLogo from '../assets/images/placeholder.png';
 import { NavLink, useNavigate } from 'react-router';
 import { useState, useRef, useEffect } from 'react';
 
-const API_URL = "api.myodl.net";
+const API_URL = "https://api.myodl.net";
 
 export default function NavBar() {
     const [loggedIn, setLoggedIn]               = useState(false);

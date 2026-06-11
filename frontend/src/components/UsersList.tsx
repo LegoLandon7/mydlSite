@@ -6,7 +6,7 @@ import './UsersList.scss';
 import LevelCard from './LevelCard';
 import SiteHeader from './SiteHeader'; // used only for the per-user header inside details
 
-const API_URL = "api.myodl.net";
+const API_URL = "https://api.myodl.net";
 
 type User = {
     discord_id: string;

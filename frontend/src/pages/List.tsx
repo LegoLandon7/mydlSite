@@ -3,14 +3,14 @@ import { useParams } from 'react-router-dom';
 import LevelsList from '../components/LevelsList';
 import '../components/LevelsList.scss';
 
-const API_URL = "api.myodl.net";
+const API_URL = "https://api.myodl.net"; 
 
 type Level = {
     level_id: number;
     name: string;
     position: number;
     link: string;
-};
+}; 
 
 export default function List() {
     const [levels, setLevels] = useState<Level[]>([]);
