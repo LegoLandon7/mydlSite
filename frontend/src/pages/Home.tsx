@@ -1,4 +1,3 @@
-import LevelCard from '../components/LevelCard';
 import SiteHeader from '../components/SiteHeader';
 import Card from '../components/Card';
 import SiteSection from '../components/SiteSection';
