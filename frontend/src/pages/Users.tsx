@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import UsersList from '../components/UsersList';
 import '../components/UsersList.scss';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = "api.myodl.net";
 
 type User = {
     discord_id: string;

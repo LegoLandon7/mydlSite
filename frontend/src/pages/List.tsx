@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import LevelsList from '../components/LevelsList';
 import '../components/LevelsList.scss';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = "api.myodl.net";
 
 type Level = {
     level_id: number;

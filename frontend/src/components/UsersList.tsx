@@ -6,7 +6,7 @@ import './UsersList.scss';
 import LevelCard from './LevelCard';
 import SiteHeader from './SiteHeader'; // used only for the per-user header inside details
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = "api.myodl.net";
 
 type User = {
     discord_id: string;
