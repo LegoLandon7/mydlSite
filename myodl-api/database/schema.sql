@@ -1,9 +1,7 @@
 CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
+    discord_id TEXT PRIMARY KEY,
     username TEXT NOT NULL,
-    email TEXT,
-    avatar TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    avatar_url TEXT
 );
 
 CREATE TABLE IF NOT EXISTS levels (

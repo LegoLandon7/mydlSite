@@ -278,6 +278,7 @@
                 font-size: $font-sm;
                 font-weight: $weight-medium;
                 transition: opacity 0.2s ease;
+                margin: 0 $space-sm;
 
                 &:hover {
                     opacity: 0.8;

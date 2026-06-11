@@ -8,8 +8,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export default function NavBar() {
     const [loggedIn, setLoggedIn] = useState(false);
-    const [username, setUsername] = useState<string>('');
-    const [avatar, setAvatar] = useState<string>('');
+    const [username, setUsername] = useState('');
+    const [avatar, setAvatar] = useState('');
     const [desktopDropdownOpen, setDesktopDropdownOpen] = useState(false);
     const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
     const [hamburgerOpen, setHamburgerOpen] = useState(false);
@@ -17,53 +17,40 @@ export default function NavBar() {
     const hamburgerRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
-    // Check for login callback in URL and update auth status
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const loginParam = params.get('login');
-        
-        if (loginParam === 'success') {
-            setLoggedIn(true);
-            checkAuth();
-            window.history.replaceState({}, document.title, window.location.pathname);
-        } else if (loginParam === 'failed') {
-            console.error('Discord login failed');
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-    }, []);
-
-    // Check authentication status on mount and periodically
     const checkAuth = async () => {
         try {
-            const response = await fetch(`${API_URL}/auth/status`, {
-                credentials: 'include'
-            });
-            const data = await response.json();
-            setLoggedIn(data.authenticated);
-            if (data.authenticated) {
+            const res = await fetch(`${API_URL}/auth/me`, { credentials: 'include' });
+            if (res.ok) {
+                const data = await res.json();
+                setLoggedIn(true);
                 setUsername(data.username || '');
-                if (data.avatar) {
-                    setAvatar(`https://cdn.discordapp.com/avatars/${data.username}/${data.avatar}.png`);
-                }
+                setAvatar(data.avatar_url || '');
             } else {
+                setLoggedIn(false);
                 setUsername('');
                 setAvatar('');
             }
-        } catch (error) {
-            console.error('Auth check failed:', error);
+        } catch {
             setLoggedIn(false);
         }
     };
 
     useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const loginParam = params.get('login');
+        if (loginParam === 'success') {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (loginParam === 'failed') {
+            console.error('Discord login failed');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
         checkAuth();
     }, []);
 
     useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
-            if (desktopMenuRef.current && !desktopMenuRef.current.contains(e.target as Node)) {
+            if (desktopMenuRef.current && !desktopMenuRef.current.contains(e.target as Node))
                 setDesktopDropdownOpen(false);
-            }
             if (hamburgerRef.current && !hamburgerRef.current.contains(e.target as Node)) {
                 setHamburgerOpen(false);
                 setMobileDropdownOpen(false);
@@ -79,27 +66,34 @@ export default function NavBar() {
     };
 
     const handleLogin = () => {
-        // Redirect to backend login endpoint
-        window.location.href = `${API_URL}/auth/login`;
+        const redirect = window.location.pathname + window.location.search;
+        window.location.href = `${API_URL}/auth/login?redirect=${encodeURIComponent(redirect)}`;
     };
 
     const handleLogout = async () => {
         try {
-            await fetch(`${API_URL}/auth/logout`, {
-                method: 'POST',
-                credentials: 'include'
-            });
+            await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+        } catch {
+            console.error('Logout failed');
+        } finally {
             setLoggedIn(false);
             setUsername('');
-            setEmail('');
             setAvatar('');
             setDesktopDropdownOpen(false);
             closeAll();
             navigate('/');
-        } catch (error) {
-            console.error('Logout failed:', error);
         }
     };
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('login') === 'success') {
+            window.history.replaceState({}, document.title, window.location.pathname);
+            setTimeout(checkAuth, 200);
+        } else {
+            checkAuth();
+        }
+    }, []);
 
     const navLinks = (onClick?: () => void) => (
         <>
@@ -123,13 +117,7 @@ export default function NavBar() {
         <button className="user-btn" onClick={onToggle}>
             <img src={avatar || PlaceHolderLogo} alt="avatar" />
             {username || 'User'}
-            <svg
-                className={`chevron ${open ? 'open' : ''}`}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-            >
+            <svg className={`chevron ${open ? 'open' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="6 9 12 15 18 9" />
             </svg>
         </button>
@@ -160,9 +148,7 @@ export default function NavBar() {
 
             <div className="hamburger" ref={hamburgerRef}>
                 <button className={`hamburger-btn ${hamburgerOpen ? 'open' : ''}`} onClick={() => setHamburgerOpen(prev => !prev)}>
-                    <span />
-                    <span />
-                    <span />
+                    <span /><span /><span />
                 </button>
 
                 <div className={`hamburger-menu ${hamburgerOpen ? 'open' : ''}`}>
@@ -177,9 +163,7 @@ export default function NavBar() {
                             Login
                         </a>
                     )}
-
                     <hr className="menu-divider" />
-
                     {navLinks(closeAll)}
                 </div>
             </div>

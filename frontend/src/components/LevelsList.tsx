@@ -108,6 +108,9 @@ export default function LevelsList({ levels, selectedLevel, onSelectLevel, loadi
                             <a href={selectedLevel.link} target="_blank" rel="noopener noreferrer" className="level-link">
                                 View on AREDL
                             </a>
+                            <a href={"https://localhost:5173/submit/" + selectedLevel.level_id} target="_blank" className="level-link">
+                                Add to Personal List
+                            </a>
                         </div>
 
                         {selectedLevel.description ? (
