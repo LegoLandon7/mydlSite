@@ -14,9 +14,14 @@ oauth = OAuth()
 
 DISCORD_CLIENT_ID     = os.getenv("DISCORD_CLIENT_ID")
 DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
+<<<<<<< HEAD
 DISCORD_REDIRECT_URI  = os.getenv("DISCORD_REDIRECT_URI")
 FRONTEND_URL          = os.getenv("FRONTEND_URL")
 ALLOWED_ORIGINS       = set(os.getenv("ALLOWED_ORIGINS", FRONTEND_URL).split(","))
+=======
+DISCORD_REDIRECT_URI  = os.getenv("DISCORD_REDIRECT_URI", "https://api.myodl.net/auth/callback")
+FRONTEND_URL          = os.getenv("FRONTEND_URL", "https://myodl.net")
+>>>>>>> 12fe22b8d27dba735bf5824824440d4c4711188e
 
 if not all([DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_REDIRECT_URI, FRONTEND_URL]):
     raise RuntimeError("Missing required environment variables for OAuth")

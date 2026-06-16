@@ -19,8 +19,10 @@ export default function ListMenu({ data }: MenuProps) {
 
     const query = searchText.toLowerCase();
 
+    const scrollRef = useRef<HTMLDivElement>(null);
+
     return (
-    <div className="viewport">
+    <div className="viewport" ref={scrollRef}>
         {/* level menu */}
         <div className={`menu`}>
             <div className="search">
@@ -37,8 +39,8 @@ export default function ListMenu({ data }: MenuProps) {
                     level.level_id.toString().includes(query)
                 );
             }).map((level) => {
-                return (<NavLink key={level.level_id} to={`/list/${level.level_id}`} 
-                className="menu-item" >
+                return (<NavLink key={level.level_id} to={`/list/${level.level_id}`}
+                className="menu-item" onClick={() => scrollRef.current?.scrollTo({left: 0, behavior: 'smooth'})}>
                     <h1>{`#${level.position}`}</h1>
                     <h2>{level.name}</h2>
                 </NavLink>);

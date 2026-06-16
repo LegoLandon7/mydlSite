@@ -3,7 +3,7 @@ import type { UserType } from '../util/types';
 import { NavLink, useParams } from 'react-router';
 import PlaceHolderIcon from '../assets/images/placeholder.png';
 import SearchIcon from '../assets/icons/search.svg';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fetchUsers, searchUsers } from '../cache/userCache';
 
 export default function UsersMenu() {
@@ -15,6 +15,8 @@ export default function UsersMenu() {
 
     const displayedUsers = searchResults ?? pageData;
     const selectedUser = id ? pageData?.find(u => u.discord_id === id) : undefined;
+
+    const scrollRef = useRef<HTMLDivElement>(null);
 
     // fetch page
     useEffect(() => {
@@ -34,7 +36,7 @@ export default function UsersMenu() {
     }, [searchText]);
 
     return (
-        <div className="viewport">
+        <div className="viewport" ref={scrollRef}>
             <div className="menu">
                 <div className="search">
                     <img src={SearchIcon} />
@@ -46,7 +48,8 @@ export default function UsersMenu() {
                 </div>
 
                 {displayedUsers?.map((u) => (
-                    <NavLink key={u.discord_id} to={`/users/${u.discord_id}`} className="menu-item">
+                    <NavLink key={u.discord_id} to={`/users/${u.discord_id}`} className="menu-item"
+                    onClick={() => scrollRef.current?.scrollTo({left: 0, behavior: 'smooth'})}>
                         <img src={u.avatar_url ?? PlaceHolderIcon} />
                         <h2>{u.username}</h2>
                     </NavLink>
@@ -65,7 +68,6 @@ export default function UsersMenu() {
                     <div className="header">
                         <img src={selectedUser.avatar_url ?? PlaceHolderIcon} />
                         <h1>{selectedUser.username}</h1>
-                        <button><img src={PlaceHolderIcon}/> Edit</button> {/* check if user is authed */}
                     </div>
 
                     <div className="info">
@@ -79,11 +81,13 @@ export default function UsersMenu() {
                         </div>
                     </div>
 
-                    {selectedUser.description && (
+                    {selectedUser.avatar_url && (
                         <div className="info">
                             <div className="detail">
-                                <h1>{selectedUser.description}</h1>
+                                <h1>{"testtest"}</h1>
                             </div>
+
+                            <button><img src={PlaceHolderIcon}/> Edit Description</button> {/* check if user is authed */}
                         </div>
                     )}
                 </div>
