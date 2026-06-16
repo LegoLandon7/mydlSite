@@ -1,0 +1,188 @@
+@use '../index.scss' as *;
+
+.viewport {
+    display: flex;
+    width: 100%;
+    transition: transform 0.4s ease;
+    gap: $space-md;
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+
+    background-color: $background-subtle;
+
+    order: 1;
+    height: 85vh;
+    width: 320px;
+    min-width: 280px;
+    flex-shrink: 0;
+
+    overflow-x: hidden;
+    overflow-y: scroll;
+
+    border: 3px solid $border-strong;
+    border-radius: $radius-sm;
+
+    margin-right: $space-md;
+
+    .search {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: flex-start;
+
+        width: 100%;
+        gap: $space-xs;
+        height: auto;
+        padding-left: $space-xs;
+        padding-top: $space-xs;
+
+        border-bottom: 1px solid $border-subtle;
+
+        img {
+            aspect-ratio: 1;
+            width: 32px;
+            height: auto;
+            filter: invert(1) sepia(0.6) saturate(6) hue-rotate(255deg) brightness(0.65);
+        }
+
+        input {
+            height: 100%;
+            background-color: $background-subtle;
+            border: none;
+
+            color: $text-secondary;
+            font-size: $font-md;
+
+            &:focus {
+                border: none;
+                outline: none;
+            }
+        }
+    }
+
+    .menu-item {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+
+        gap: $space-sm;
+        padding: $space-sm;
+
+        border-bottom: 2px solid $border-subtle;
+        width: 100%;
+
+        img {
+
+        }
+
+        h1 {font-size: $font-md; }
+        h2 { font-size: $font-md; }
+
+        &.active { background-color: $background-active; }
+        &:hover { background-color: $background-hover; }
+    }
+}
+
+.page {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+
+    gap: $space-lg;
+    padding: $space-md;
+
+    background-color: $background-subtle;
+    background-size: cover;
+
+    order: 0;
+    height: 85vh;
+    width: 100%;
+
+    overflow-y: scroll;
+
+    border: 3px solid $border-strong;
+    border-radius: $radius-sm;
+
+    h1 {
+        text-shadow: $text-shadow-xl;
+    }
+
+    .error {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+
+        width: 100%;
+        height: 100%;
+
+        h1 {
+            text-shadow: none;
+        }
+    }
+
+    .info {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+
+        gap: $space-sm;
+        padding: $space-lg;
+
+        background-color: rgba($background-strong, 0.8);
+
+        border-left: 8px solid $border-strong;
+        border-radius: $radius-md;
+
+        width: 80%;
+        height: auto;
+
+        .detail {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: center;
+
+            gap: $space-xs;
+
+            h1 {
+                font-size: $font-md;
+                font-weight: $weight-regular;
+            }
+
+            h2 {
+                font-size: $font-md;
+                font-weight: $weight-semibold;
+            }
+        }
+    }
+}
+
+@media screen and (max-width: $mobile-breakpoint) {
+    .viewport {
+        display: flex;
+        overflow-x: auto;
+        overflow-y: hidden;
+
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+
+        gap: 7.5vw;
+        padding-inline: 7.5vw;
+    }
+
+    .menu, .page {
+        flex: 0 0 85vw;
+        height: 70vh;
+
+        scroll-snap-align: center;
+    }
+}

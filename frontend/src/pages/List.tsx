@@ -1,52 +1,52 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import LevelsList from '../components/LevelsList';
-import '../components/LevelsList.scss';
+import ListMenu from '../components/ListMenu';
+import type { LevelType } from '../util/types';
+import '../util/containers.scss';
 
 const API_URL = import.meta.env.VITE_API_URL;
+const API_ENDPOINT = `${API_URL}/levels`
 
-type Level = {
-    level_id: number;
-    name: string;
-    position: number;
-    link: string;
-};
+const CACHE_TIME = 30 * 60 * 1000; // 30 minutes
 
 export default function List() {
-    const [levels, setLevels] = useState<Level[]>([]);
-    const [selectedLevel, setSelectedLevel] = useState<Level | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const { id } = useParams();
-
-    useEffect(() => { fetchLevels(); }, []);
+    const [levelData, setLevelData] = useState<LevelType[]>([]);
 
     useEffect(() => {
-        if (id && levels.length > 0)
-            setSelectedLevel(levels.find(l => l.level_id.toString() === id) || null);
-    }, [id, levels]);
+        async function loadLevelData() {
+            // load cached levels
+            const cached = localStorage.getItem("levelsCache");
 
-    const fetchLevels = async () => {
-        try {
-            const response = await fetch(`${API_URL}/list/`, { credentials: 'include' });
-            if (!response.ok) throw new Error(`Failed to fetch levels: ${response.status}`);
-            setLevels(await response.json());
-            setError(null);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to load levels');
-        } finally {
-            setLoading(false);
+            if (cached) {
+                // check if cache timer is up
+                const { data, timestamp } = JSON.parse(cached);
+                
+                if (Date.now() - timestamp < CACHE_TIME) {
+                    // set current cached levels
+                    setLevelData(data);
+                    return;
+                }
+            }
+
+            // cache missing / expired levels
+            const response = await fetch(API_ENDPOINT);
+            const freshData = await response.json();
+
+            setLevelData(freshData);
+
+            // cache new levels to local storage
+            localStorage.setItem("levelsCache", JSON.stringify({
+                data: freshData,
+                timestamp: Date.now(),
+            }));
         }
-    };
 
-    return (
-        <LevelsList
-            levels={levels}
-            selectedLevel={selectedLevel}
-            onSelectLevel={setSelectedLevel}
-            loading={loading}
-            error={error}
-            onRetry={fetchLevels}
-        />
-    );
+        // load level data
+        loadLevelData();
+    }, []);
+
+    return (<>
+    <ListMenu 
+        data={levelData}
+    />
+    </>);
 }

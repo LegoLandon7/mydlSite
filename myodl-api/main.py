@@ -1,18 +1,20 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
 from database.db import init_db
-from routers import list, auth, users
 
-load_dotenv(".env")
+load_dotenv()
 
-app = FastAPI(title="MYODL API", version="1.0.0")
+from routers import levels, auth, users, submissions, notifications
+
+app = FastAPI(title="MYODL API", version="1.0.0", docs_url=None)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://myodl.net"],
+    allow_origins=["https://myodl.net", "http://localhost:5173"],
     allow_credentials=True,
     allow_headers=["*"],
     allow_methods=["*"],
@@ -28,14 +30,16 @@ app.add_middleware(
 async def startup():
     await init_db()
 
-app.include_router(list.router)
+app.include_router(levels.router)
 app.include_router(auth.router)
 app.include_router(users.router)
-
-@app.get("/")
-async def root():
-    return {"status": "ok"}
+app.include_router(notifications.router)
+app.include_router(submissions.router)
 
 @app.get("/", tags=["misc"])
 async def root():
     return {"status": "ok"}
+
+@app.get("/docs")
+async def docs():
+    return FileResponse("docs.html")
