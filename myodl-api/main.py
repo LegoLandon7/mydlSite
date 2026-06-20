@@ -14,7 +14,7 @@ app = FastAPI(title="MYODL API", version="1.0.0", docs_url=None)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://myodl.net", "http://localhost:5173"],
+    allow_origins=["https://myodl.net", "http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_headers=["*"],
     allow_methods=["*"],

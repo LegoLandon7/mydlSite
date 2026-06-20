@@ -1,17 +1,34 @@
 import './UsersMenu.scss';
-import type { UserType } from '../util/types';
-import { NavLink, useParams } from 'react-router';
+import type { LevelType, UserListType, UserType } from '../util/types';
+import { NavLink, useLocation, useParams } from 'react-router';
 import PlaceHolderIcon from '../assets/images/placeholder.png';
 import SearchIcon from '../assets/icons/search.svg';
 import { useEffect, useRef, useState } from 'react';
-import { fetchUsers, searchUsers } from '../cache/userCache';
+import { fetchUsers, searchUsers, handleDescription } from '../cache/userCache';
+import { useToast } from '../util/useToast';
+import ToastContainer from './ToastContainer';
+import LevelCard from './LevelCard';
+import { fetchUserList } from '../api/users';
 
 export default function UsersMenu() {
+    // variables
     const { id } = useParams();
     const [currentPage, setCurrentPage] = useState(1);
     const [searchText, setSearchText] = useState("");
     const [pageData, setPageData] = useState<UserType[] | null>(null);
+    const [userListData, setUserListData] = useState<UserListType[] | null>(null);
+    const [userLevelData, setUserLevelData] = useState<LevelType[] | null>(null);
     const [searchResults, setSearchResults] = useState<UserType[] | null>(null);
+    const [description, setDescription] = useState("");
+    const [showDescriptionPopup, setShowDescriptionPopup] = useState(false);
+    const { toasts, showToast } = useToast();
+
+    // endpoint
+    const location = useLocation();
+
+    const isList = location.pathname.endsWith("/list");
+    const isGroups = location.pathname.endsWith("/groups");
+    const isDetails = !isList && !isGroups;
 
     const displayedUsers = searchResults ?? pageData;
     const selectedUser = id ? pageData?.find(u => u.discord_id === id) : undefined;
@@ -23,7 +40,6 @@ export default function UsersMenu() {
         fetchUsers(currentPage).then((res) => setPageData(res.users));
     }, [currentPage]);
 
-    // search with debounce
     useEffect(() => {
         if (searchText.length < 2) {
             setSearchResults(null);
@@ -35,7 +51,29 @@ export default function UsersMenu() {
         return () => clearTimeout(timeout);
     }, [searchText]);
 
-    return (
+    // fetch list
+    useEffect(() =>  {
+        if (!id) return;
+        fetchUserList(id).then((res) => setUserListData(res));
+        if (!userListData) return;
+        for (data : res) {
+            fetchLevel()
+        }
+        fetchLevel(res.level_id).then((res) => setUserLevelData(res));
+    }, [id]);
+
+    useEffect(() => {
+        if (searchText.length < 2) {
+            setSearchResults(null);
+            return;
+        }
+        const timeout = setTimeout(() => {
+            searchUsers(searchText).then(setSearchResults);
+        }, 300);
+        return () => clearTimeout(timeout);
+    }, [searchText]);
+
+    return (<>
         <div className="viewport" ref={scrollRef}>
             <div className="menu">
                 <div className="search">
@@ -54,6 +92,8 @@ export default function UsersMenu() {
                         <h2>{u.username}</h2>
                     </NavLink>
                 ))}
+
+                <button>Page #s</button>
             </div>
 
             {!id ? (
@@ -70,24 +110,49 @@ export default function UsersMenu() {
                         <h1>{selectedUser.username}</h1>
                     </div>
 
-                    <div className="info">
-                        <div className="detail">
-                            <h1>Discord ID:</h1>
-                            <h2>{selectedUser.discord_id}</h2>
-                        </div>
-                        <div className="detail">
-                            <h1>Username:</h1>
-                            <h2>{selectedUser.username}</h2>
-                        </div>
-                    </div>
+                    <hr />
 
-                    {selectedUser.avatar_url && (
+                    <nav className="user-navbar">
+                        <NavLink to={`/users/${id}`} end>Details</NavLink>
+                        <NavLink to={`/users/${id}/list`}>List</NavLink>
+                        <NavLink to={`/users/${id}/groups`}>Groups</NavLink>
+                    </nav>
+
+                    {isDetails && <> 
                         <div className="info">
                             <div className="detail">
-                                <h1>{"testtest"}</h1>
+                                <h1>Discord ID:</h1>
+                                <h2>{selectedUser.discord_id}</h2>
                             </div>
+                            <div className="detail">
+                                <h1>Username:</h1>
+                                <h2>{selectedUser.username}</h2>
+                            </div>
+                        </div>
 
-                            <button><img src={PlaceHolderIcon}/> Edit Description</button> {/* check if user is authed */}
+                        {selectedUser.avatar_url && (
+                            <div className="info">
+                                <div className="detail">
+                                    <h1>{"testtest"}</h1>
+                                </div>
+
+                                <button onClick={() => {setShowDescriptionPopup(true)}}><img src={PlaceHolderIcon}/> Edit Description</button> {/* check if user is authed */}
+                            </div>
+                        )}
+                    </>}
+
+                    {isList && (
+                        <div className="user-list">
+                            <LevelCard
+                                placement={userLevelData[0].position}
+                            />
+                        </div>
+                    )}
+
+                    {isGroups && (
+                        <div className="info">
+                            <h1>Groups</h1>
+                            <p>User's groups go here.</p>
                         </div>
                     )}
                 </div>
@@ -100,5 +165,45 @@ export default function UsersMenu() {
                 </div>
             )}
         </div>
-    );
+
+        {/* popups */}
+        {showDescriptionPopup && (<>
+            <div className="overlay" style={{ display: 'flex' }}>
+                <div className="header">
+                    <h1>{`Edit description for ${selectedUser?.username}`}</h1>
+                    <pre>{`${description.length} / 500`}</pre>
+                </div>
+
+
+                <textarea 
+                    value={description}
+                    onChange={(e) => {
+                        setDescription(e.target.value);
+                        if (description.length > 500) setDescription(description.slice(0, 500));
+                    }}
+                    placeholder="Explain a bit about yourself..."
+                    maxLength={500}
+                />
+
+                <div className="overlay-menu">
+                    <button onClick={async () => {
+                        if (await handleDescription(description)) {
+                            setShowDescriptionPopup(false);
+                            showToast("[SUCCESS] successfully edited description", "success");
+                        } else {
+                            showToast("[ERROR] couldn't edit description", "error");
+                        }
+                    }}>Confirm</button>
+                    <button onClick={() => {
+                        setShowDescriptionPopup(false);
+                        }}>Close</button>
+                </div>
+            </div>
+        </>)}
+
+        {toasts && (
+            <ToastContainer toasts={toasts}
+            />
+        )}
+    </>);
 }

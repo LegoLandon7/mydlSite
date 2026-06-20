@@ -45,7 +45,7 @@ $info-color:    #5ab7ff;
 // layout
 $navbar-height: 64px;
 $navbar-width:  95vw;
-$max-width:     1280px;
+$max-width:     2560px;
 
 // radius
 $radius-xs: 3px;
@@ -53,12 +53,6 @@ $radius-sm: 6px;
 $radius-md: 12px;
 $radius-lg: 20px;
 $radius-xl: 9999px;
-
-// font sizes
-$font-sm: 0.875rem;
-$font-md: 1rem;
-$font-lg: 1.125rem;
-$font-xl: 1.5rem;
 
 // spacing
 $space-xs: 4px;
@@ -111,11 +105,12 @@ code {
 }
 
 // font sizes
-$font-xs: clamp(0.6rem, 0.55rem + 0.2vw, 0.8rem);
-$font-sm: clamp(0.75rem, 0.7rem + 0.25vw, 0.95rem);
-$font-md: clamp(0.9rem, 0.85rem + 0.3vw, 1.1rem);
-$font-lg: clamp(1rem, 0.9rem + 0.7vw, 1.5rem);
-$font-xl: clamp(1.4rem, 1rem + 2vw, 3rem);
+$font-xs:  clamp(0.35rem, 0.4rem + 0.25vw, 0.9rem);
+$font-sm:  clamp(0.5rem, 0.55rem + 0.35vw, 1.1rem);
+$font-md:  clamp(0.7rem, 0.7rem + 0.5vw, 1.4rem);
+$font-lg:  clamp(0.9rem, 0.8rem + 1vw, 2rem);
+$font-xl:  clamp(1.1rem, 0.8rem + 2.5vw, 4rem);
+$font-xxl: clamp(1.3rem, 0.8rem + 5vw, 7rem);
 
 // ordering
 $z1: 1;

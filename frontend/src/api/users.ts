@@ -14,6 +14,8 @@ function isExpired(entry: CacheEntry<unknown>): boolean {
     return Date.now() - entry.timestamp > CACHE_TTL;
 }
 
+// cache user pages
+
 export function getUsersCache(page: number): apiUserType | null {
     const entry = usersCache.get(page);
     if (!entry || isExpired(entry)) return null;
@@ -24,6 +26,8 @@ export function setUsersCache(page: number, data: apiUserType) {
     usersCache.set(page, { data, timestamp: Date.now() });
 }
 
+// cache user lists
+
 export function getUserListCache(discord_id: string): UserListType | null {
     const entry = userListCache.get(discord_id);
     if (!entry || isExpired(entry)) return null;
@@ -33,6 +37,8 @@ export function getUserListCache(discord_id: string): UserListType | null {
 export function setUserListCache(discord_id: string, data: UserListType) {
     userListCache.set(discord_id, { data, timestamp: Date.now() });
 }
+
+// fetch users
 
 export async function fetchUsers(page: number): Promise<apiUserType> {
     const cached = getUsersCache(page);
@@ -56,20 +62,8 @@ export async function searchUsers(q: string): Promise<UserType[]> {
     return data;
 }
 
-export async function handleDescription(description: string) {
-    try {
-        const res = await fetch(`${API_ENDPOINT}/me/description`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                description
-            })
-        });
-        return res.ok;
-    } catch (err) {
-        console.error(err);
-        return false;
-    }
+export async function fetchUserList(discord_id: string): Promise<UserListType[]> {
+    const res = await fetch(`${API_ENDPOINT}/${discord_id}/list`);
+    const data: UserListType[] = await res.json();
+    return data;
 }

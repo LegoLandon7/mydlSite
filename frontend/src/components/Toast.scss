@@ -1,0 +1,76 @@
+@use '../index.scss' as *;
+
+.toast-container {
+    position: fixed;
+    bottom: $space-lg;
+    right: $space-lg;
+
+    display: flex;
+    flex-direction: column;
+    gap: $space-sm;
+
+    z-index: 5000;
+    pointer-events: none;
+}
+
+.toast {
+    min-width: 280px;
+    max-width: 400px;
+
+    display: flex;
+    align-items: center;
+    gap: $space-sm;
+
+    padding: $space-md $space-lg;
+
+    color: white;
+    font-size: $font-md;
+    font-weight: $weight-semibold;
+
+    border-radius: $radius-md;
+
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+
+    pointer-events: auto;
+
+    animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+
+    backdrop-filter: blur(10px);
+
+    &.success {
+        background-color: rgba($success-color, 0.9);
+    }
+
+    &.error {
+        background-color: rgba($error-color, 0.9);
+    }
+
+    &.warning {
+        background-color: rgba($warning-color, 0.9);
+    }
+}
+
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}

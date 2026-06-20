@@ -26,6 +26,8 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/list/:id" element={<List />} />
           <Route path="/users" element={<Users />} />
           <Route path="/users/:id" element={<Users />} />
+          <Route path="/users/:id/list" element={<Users />} />
+          <Route path="/users/:id/groups" element={<Users />} />
           <Route path="/groups" element={<Groups />} />
           <Route path="/groups/:id" element={<Groups />} />
           <Route path="/groups/user/:id" element={<Groups />} />

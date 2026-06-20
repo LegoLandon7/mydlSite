@@ -74,12 +74,12 @@ export default function NavBar() {
 
         if (loginParam === 'success') {
             window.history.replaceState({}, document.title, window.location.pathname);
-            //setTimeout(checkAuth, 200);
+            setTimeout(checkAuth, 200);
         } else if (loginParam === 'failed') {
             console.error('Discord login failed');
             window.history.replaceState({}, document.title, window.location.pathname);
         } else {
-            //checkAuth();
+            checkAuth();
         }
     }, []);
 
