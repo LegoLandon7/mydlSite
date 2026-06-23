@@ -1,4 +1,4 @@
-import { useToast } from '../util/useToast'
+import { useToast } from '../../util/useToast'
 import './Toast.scss'
 
 export default function Toast() {

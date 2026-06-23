@@ -1,6 +1,6 @@
-import SiteHeader from '../components/SiteHeader';
-import Card from '../components/Card';
-import SiteSection from '../components/SiteSection';
+import SiteHeader from '../components/web/SiteHeader';
+import Card from '../components/web/Card';
+import SiteSection from '../components/web/SiteSection';
 
 import '../util/containers.scss';
 

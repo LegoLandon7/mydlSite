@@ -1,25 +1,28 @@
 import './LevelsMenu.scss';
+
 import { NavLink, useNavigate, useParams } from 'react-router';
 import { useEffect, useRef, useState } from 'react';
-import SearchIcon from '../assets/icons/search.svg';
-import { useLevels } from '../api/call/levels/levelsStore';
-import SiteHeader from './SiteHeader';
-import type { Level } from '../api/types/levels';
-import { useToast } from '../util/useToast';
-import { useAuth } from '../api/call/auth/auth';
+
+import SearchIcon from '../../assets/icons/search.svg';
+import SiteHeader from '../web/SiteHeader';
+
+import { useLevels } from '../../api/call/levels/levelsStore';
+import { useToast } from '../../util/useToast';
+import { useAuth } from '../../api/call/auth/auth';
+
+import type { Level } from '../../api/types/levels';
 
 export default function LevelsMenu() {
+    // load levels
     const levels = useLevels((s) => s.levels);
     const loadLevels = useLevels((s) => s.loadLevels);
     const loading = useLevels((s) => s.loading);
 
-    const { showToast } = useToast();
-
-    const { user } = useAuth();
     useEffect(() => {
         loadLevels();
     }, [loadLevels]);
 
+    // get level
     const [searchText, setSearchText] = useState("");
     const { id } = useParams();
     const navigate = useNavigate();
@@ -35,10 +38,6 @@ export default function LevelsMenu() {
         }
     }, [id, levels, navigate]);
 
-    const scrollRef = useRef<HTMLDivElement>(null);
-
-    const [showModal, setShowModal] = useState(false);
-    
     const [inputLevel, setInputLevel] = useState<Partial<Level>>({
         level_id: undefined,
         name: "",
@@ -46,6 +45,12 @@ export default function LevelsMenu() {
         thumbnail_url: "",
         description: "",
     });
+
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [showModal, setShowModal] = useState(false);
+
+    const { user } = useAuth();
+    const { showToast } = useToast();
 
     const handleSubmit = () => {
         if (!inputLevel.level_id) {

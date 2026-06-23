@@ -1,2 +1,2 @@
-import LevelsMenu from '../components/LevelsMenu';
+import LevelsMenu from '../components/specialized/LevelsMenu';
 export default function Levels() {return <LevelsMenu />;}

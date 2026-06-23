@@ -1,5 +1,5 @@
 
-import SiteHeader from '../components/SiteHeader';
+import SiteHeader from '../components/web/SiteHeader';
 
 import '../util/containers.scss';
 
@@ -13,3 +13,11 @@ export default function Lists() {
     </>
   );
 }
+
+// list of lists
+// page shows /details /levels /users
+// each level shows records
+
+// list of users
+// page shows /details / levels / lists
+// each level shows record

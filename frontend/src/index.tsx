@@ -7,14 +7,15 @@ import Levels from './pages/Levels';
 import Users from './pages/Users';
 import Lists from './pages/Lists';
 
-import NavBar from './components/NavBar';
-import Footer from './components/Footer';
+import NavBar from './components/web/NavBar';
+import Footer from './components/web/Footer';
 
 import ScrollToTop from './util/ScrollToTop';
 
 import './index.scss';
+
 import AuthInit from './api/call/auth/AuthInit';
-import Toast from './components/Toast';
+import Toast from './components/ui/Toast';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

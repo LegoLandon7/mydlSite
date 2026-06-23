@@ -1,4 +1,4 @@
-@use '../index.scss' as *;
+@use '../../index.scss' as *;
 
 .viewport {
     display: flex;
@@ -28,27 +28,6 @@
     border-radius: $radius-sm;
 
     margin-right: $space-md;
-
-    button {
-        width: 100%;
-        padding: $space-sm;
-        border-radius: 0;
-        color: $text-secondary;
-        background-color: $background-strong;
-        height: 48px;
-        font-size: $font-md;
-        cursor: pointer;
-
-        transition: background-color 0.2s ease;
-
-        &:hover {
-            background-color: $background-hover;
-        }
-
-        border: none;
-        border-right: 2px solid $border-subtle;
-        border-bottom: 2px solid $border-subtle;
-    }
 
     .search {
         display: flex;

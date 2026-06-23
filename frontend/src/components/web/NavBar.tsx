@@ -1,12 +1,12 @@
 import './NavBar.scss';
 
-import PlaceHolderLogo from '../assets/images/placeholder.png';
+import PlaceHolderLogo from '../..//assets/images/placeholder.png';
 
 import { NavLink } from 'react-router';
 import { useState, useRef, useEffect } from 'react';
 
-import { useAuth } from '../api/call/auth/auth';
-import { useAuthActions } from '../api/call/auth/authActions';
+import { useAuth } from '../../api/call/auth/auth';
+import { useAuthActions } from '../../api/call/auth/authActions';
 
 
 export default function NavBar() {
