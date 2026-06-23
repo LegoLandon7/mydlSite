@@ -1,165 +1,170 @@
 import os
-import aiosqlite
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlparse
-from fastapi import APIRouter, Request, HTTPException, Depends
-from fastapi.responses import RedirectResponse, JSONResponse
-from authlib.integrations.starlette_client import OAuth
+
+import aiosqlite
+import httpx
+from fastapi import APIRouter, Request, HTTPException, Depends, Cookie
+from fastapi.responses import JSONResponse, RedirectResponse
+from jose import jwt, JWTError
+from pydantic import BaseModel
+from urllib.parse import quote, unquote
+
 from database.db import DB
 from util.limiter import limiter
+from routers.users import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-oauth = OAuth()
+# global
 
-DISCORD_CLIENT_ID     = os.getenv("DISCORD_CLIENT_ID")
+SESSION_EXPIRE_MINUTES = SESSION_EXPIRE_MINUTES = 60 * 24 * 7  # 1 week
+
+JWT_SECRET = os.getenv("JWT_SECRET")
+JWT_ALGORITHM = "HS256"
+
+DISCORD_API = "https://discord.com/api"
+DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
 DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
-DISCORD_REDIRECT_URI  = os.getenv("DISCORD_REDIRECT_URI")
-FRONTEND_URL          = os.getenv("FRONTEND_URL")
-ALLOWED_ORIGINS       = set(os.getenv("ALLOWED_ORIGINS", FRONTEND_URL).split(","))
+DISCORD_REDIRECT_URI = os.getenv("DISCORD_REDIRECT_URI")
 
-if not all([DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_REDIRECT_URI, FRONTEND_URL]):
-    raise RuntimeError("Missing required environment variables for OAuth")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 
-oauth.register(
-    name="discord",
-    client_id=DISCORD_CLIENT_ID,
-    client_secret=DISCORD_CLIENT_SECRET,
-    authorize_url="https://discord.com/api/oauth2/authorize",
-    access_token_url="https://discord.com/api/oauth2/token",
-    api_base_url="https://discord.com/api/",
-    client_kwargs={"scope": "identify"},
-)
+# classes
 
-# How long the /me cache is valid (seconds)
-ME_CACHE_TTL = 300  # 5 minutes
+class Session(BaseModel):
+    discord_id: int
 
-def safe_redirect(redirect: str) -> str:
-    """Only allow relative paths, never external URLs."""
-    if not redirect:
-        return "/"
-    parsed = urlparse(redirect)
-    if parsed.scheme or parsed.netloc:
-        return "/"
-    # Only allow alphanumeric, slashes, hyphens, underscores
-    if not all(c.isalnum() or c in "/-_" for c in redirect):
-        return "/"
-    return redirect
+# helpers
 
-def get_session_user(request: Request) -> str:
-    user_id = request.session.get("user_id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    return user_id
+def create_session_token(discord_id: int) -> str:
+    expire_time = datetime.now(timezone.utc) + timedelta(minutes=SESSION_EXPIRE_MINUTES)
+    payload = {"discord_id": discord_id, "exp": expire_time}
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
-def check_origin(request: Request):
-    origin = request.headers.get("origin", "")
-    if not any(origin.startswith(allowed) for allowed in ALLOWED_ORIGINS):
-        raise HTTPException(status_code=403, detail="Forbidden")
+def decode_session_token(token: str) -> Session:
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except JWTError:
+        raise HTTPException(401, "Invalid or expired session")
+    return Session(discord_id=payload["discord_id"])
 
+async def fetch_user(db: aiosqlite.Connection, discord_user: dict) -> User:
+    # get discord data
+    discord_id = discord_user["id"]
+    username = discord_user["username"]
+
+    avatar_hash = discord_user.get("avatar")
+    avatar_url = (
+        f"https://cdn.discordapp.com/avatars/{discord_id}/{avatar_hash}.png"
+        if avatar_hash else None
+    )
+
+    # update database
+    async with db.execute("SELECT * FROM users WHERE discord_id = ?", (discord_id,),) as c:
+        user = await c.fetchone()
+    
+    if user:
+        await db.execute("UPDATE users SET username = ?, avatar_url = ? WHERE discord_id = ?", (username, avatar_url, discord_id),)
+    else:
+        await db.execute("INSERT INTO users (discord_id, username, avatar_url) VALUES (?, ?, ?)", (discord_id, username, avatar_url),)
+    await db.commit()
+
+    # validate user
+    async with db.execute("SELECT * FROM users WHERE discord_id = ?", (discord_id,)) as c:
+        user = await c.fetchone()
+
+    user_obj = User.model_validate(dict(user))
+    return user_obj
+
+async def get_current_user(session: str | None = Cookie(None)) -> User:
+    if not session:
+        raise HTTPException(401, "Not authenticated")
+    
+    session_data = decode_session_token(session)
+
+    async with aiosqlite.connect(DB) as db:
+        db.row_factory = aiosqlite.Row
+
+        async with db.execute("SELECT * FROM users WHERE discord_id = ?", (session_data.discord_id,)) as c:
+            user = await c.fetchone()
+    
+    if not user:
+        raise HTTPException(401, "User not found")
+    
+    user_obj = User.model_validate(dict(user))
+    return user_obj
+
+# routers
 
 @router.get("/login")
 @limiter.limit("10/minute")
-async def login(request: Request, redirect: str = "/"):
-    request.session["post_login_redirect"] = safe_redirect(redirect)
-    # CSRF token tied to this login attempt
-    import secrets
-    state = secrets.token_urlsafe(32)
-    request.session["oauth_state"] = state
-    return await oauth.discord.authorize_redirect(request, DISCORD_REDIRECT_URI)
-
+def login(request: Request, redirect: str = "/"):
+    url = (
+        f"{DISCORD_API}/oauth2/authorize"
+        f"?client_id={DISCORD_CLIENT_ID}"
+        f"&redirect_uri={DISCORD_REDIRECT_URI}"
+        "&response_type=code"
+        "&scope=identify"
+        f"&state={quote(redirect)}"
+    )
+    return RedirectResponse(url)
 
 @router.get("/callback")
 @limiter.limit("10/minute")
-async def callback(request: Request):
-    # Validate CSRF state
-    session_state = request.session.pop("oauth_state", None)
-    if not session_state:
-        return RedirectResponse(url=f"{FRONTEND_URL}?login=failed")
+async def callback(request: Request, code: str, state: str | None = "/"):
+    redirect_path = state or "/"
+    redirect_path = unquote(redirect_path)
 
-    try:
-        token = await oauth.discord.authorize_access_token(request)
-        user_resp = await oauth.discord.get("users/@me", token=token)
-        user_data = user_resp.json()
+    async with httpx.AsyncClient() as client:
+        token_res = await client.post(
+            f"{DISCORD_API}/oauth2/token",
+            data={
+                "client_id": DISCORD_CLIENT_ID,
+                "client_secret": DISCORD_CLIENT_SECRET,
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": DISCORD_REDIRECT_URI,
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        if token_res.status_code != 200:
+            raise HTTPException(400, "Discord token exchange failed")
+        access_token = token_res.json()["access_token"]
 
-        if "id" not in user_data:
-            raise ValueError("Invalid user data from Discord")
+        user_res = await client.get(
+            f"{DISCORD_API}/users/@me",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        if user_res.status_code != 200:
+            raise HTTPException(400, "Failed to fetch Discord user")
+        discord_user = user_res.json()
 
-        discord_id = str(user_data["id"])
-        username   = user_data.get("username", "")
-        avatar     = user_data.get("avatar")
-        avatar_url = f"https://cdn.discordapp.com/avatars/{discord_id}/{avatar}.png" if avatar else None
-
-        async with aiosqlite.connect(DB) as db:
-            await db.execute("""
-                INSERT INTO users (discord_id, username, avatar_url)
-                VALUES (?, ?, ?)
-                ON CONFLICT(discord_id) DO UPDATE SET
-                    username   = excluded.username,
-                    avatar_url = excluded.avatar_url
-            """, (discord_id, username, avatar_url))
-            await db.commit()
-
-        request.session["user_id"]   = discord_id
-        request.session["username"]  = username
-        request.session["avatar_url"] = avatar_url
-        # Cache timestamp so frontend knows when to refresh
-        request.session["cached_at"] = datetime.now(timezone.utc).isoformat()
-
-        redirect = request.session.pop("post_login_redirect", "/")
-        return RedirectResponse(url=f"{FRONTEND_URL}{redirect}&login=success" if "?" in redirect else f"{FRONTEND_URL}{redirect}?login=success")
-
-    except Exception as e:
-        print(f"[AUTH ERROR] {e}")
-        return RedirectResponse(url=f"{FRONTEND_URL}?login=failed")
-
-
-@router.get("/me")
-@limiter.limit("30/minute")
-async def me(request: Request):
-    user_id = get_session_user(request)
-
-    # Return cached data if still fresh
-    cached_at = request.session.get("cached_at")
-    if cached_at:
-        age = datetime.now(timezone.utc) - datetime.fromisoformat(cached_at)
-        if age < timedelta(seconds=ME_CACHE_TTL):
-            return JSONResponse({
-                "discord_id": user_id,
-                "username":   request.session.get("username"),
-                "avatar_url": request.session.get("avatar_url"),
-                "cached":     True,
-            })
-
-    # Cache expired — fetch fresh from DB
     async with aiosqlite.connect(DB) as db:
         db.row_factory = aiosqlite.Row
-        async with db.execute(
-            "SELECT discord_id, username, avatar_url FROM users WHERE discord_id = ?", (user_id,)
-        ) as cursor:
-            row = await cursor.fetchone()
+        user = await fetch_user(db, discord_user)
 
-    if not row:
-        request.session.clear()
-        raise HTTPException(status_code=404, detail="User not found")
+    session_token = create_session_token(user.discord_id)
 
-    # Refresh session cache
-    request.session["username"]  = row["username"]
-    request.session["avatar_url"] = row["avatar_url"]
-    request.session["cached_at"] = datetime.now(timezone.utc).isoformat()
-
-    return dict(row)
-
-
-@router.get("/status")
-async def status(request: Request):
-    user_id = request.session.get("user_id")
-    return {"authenticated": user_id is not None}
-
+    response = RedirectResponse(url=f"{FRONTEND_URL}{redirect_path}")
+    response.set_cookie(
+        key="session",
+        value=session_token,
+        httponly=True,
+        secure=False,  # false for http / local | true for https / public     
+        samesite="lax",
+        max_age=SESSION_EXPIRE_MINUTES * 60,
+    )
+    return response
 
 @router.post("/logout")
 @limiter.limit("10/minute")
 async def logout(request: Request):
-    check_origin(request)
-    request.session.clear()
-    return {"status": "logged out"}
+    response = JSONResponse({"ok": True})
+    response.delete_cookie("session")
+    return response
+
+
+@router.get("/me", response_model=User)
+@limiter.limit("60/minute")
+async def get_me(request: Request, current_user: User = Depends(get_current_user)):
+    return current_user

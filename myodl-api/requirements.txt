@@ -8,3 +8,4 @@ python-dotenv
 authlib
 requests
 slowapi
+python-jose[cryptography]

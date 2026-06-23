@@ -3,7 +3,7 @@ import SiteHeader from '../components/SiteHeader';
 
 import '../util/containers.scss';
 
-export default function Home() {
+export default function Lists() {
   return (
     <>
 

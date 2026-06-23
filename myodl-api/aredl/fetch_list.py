@@ -26,7 +26,7 @@ async def populate_database():
             await db.execute(
                 """
                 INSERT OR REPLACE INTO levels
-                (level_id, name, position, link, thumbnail, description)
+                (level_id, name, position, aredl_url, thumbnail_url, description)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """,
                 (

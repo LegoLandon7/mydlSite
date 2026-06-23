@@ -1,87 +1,30 @@
-// AI assisted
-
 import './NavBar.scss';
 
 import PlaceHolderLogo from '../assets/images/placeholder.png';
-import { NavLink, useNavigate } from 'react-router';
+
+import { NavLink } from 'react-router';
 import { useState, useRef, useEffect } from 'react';
 
-const API_URL = "https://api.myodl.net";
+import { useAuth } from '../api/call/auth/auth';
+import { useAuthActions } from '../api/call/auth/authActions';
+
 
 export default function NavBar() {
-    const [loggedIn, setLoggedIn]               = useState(false);
-    const [username, setUsername]               = useState('');
-    const [discordId, setDiscordId]             = useState('');
-    const [avatar, setAvatar]                   = useState('');
+    const user = useAuth((s) => s.user);
+
+    const { login, logout } = useAuthActions();
+
     const [desktopDropdown, setDesktopDropdown] = useState(false);
     const [mobileDropdown, setMobileDropdown]   = useState(false);
     const [hamburgerOpen, setHamburgerOpen]     = useState(false);
 
     const desktopMenuRef = useRef<HTMLDivElement>(null);
     const hamburgerRef   = useRef<HTMLDivElement>(null);
-    const navigate       = useNavigate();
-
-    const clearAuth = () => {
-        setLoggedIn(false);
-        setUsername('');
-        setAvatar('');
-        setDiscordId('');
-    };
-
-    const checkAuth = async () => {
-        try {
-            const res = await fetch(`${API_URL}/auth/me`, { credentials: 'include' });
-            if (res.ok) {
-                const data = await res.json();
-                setLoggedIn(true);
-                setUsername(data.username || '');
-                setAvatar(data.avatar_url || '');
-                setDiscordId(data.discord_id || '');
-            } else {
-                clearAuth();
-            }
-        } catch {
-            clearAuth();
-        }
-    };
 
     const closeAll = () => {
         setHamburgerOpen(false);
         setMobileDropdown(false);
     };
-
-    const handleLogin = () => {
-        const redirect = window.location.pathname + window.location.search;
-        window.location.href = `${API_URL}/auth/login?redirect=${encodeURIComponent(redirect)}`;
-    };
-
-    const handleLogout = async () => {
-        try {
-            await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
-        } catch {
-            console.error('Logout failed');
-        } finally {
-            clearAuth();
-            setDesktopDropdown(false);
-            closeAll();
-            navigate('/');
-        }
-    };
-
-    useEffect(() => {
-        const params     = new URLSearchParams(window.location.search);
-        const loginParam = params.get('login');
-
-        if (loginParam === 'success') {
-            window.history.replaceState({}, document.title, window.location.pathname);
-            setTimeout(checkAuth, 200);
-        } else if (loginParam === 'failed') {
-            console.error('Discord login failed');
-            window.history.replaceState({}, document.title, window.location.pathname);
-        } else {
-            checkAuth();
-        }
-    }, []);
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -98,24 +41,25 @@ export default function NavBar() {
         <>
             <NavLink to="/" onClick={onClick}>Home</NavLink>
             <NavLink to="/users" onClick={onClick}>Users</NavLink>
-            <NavLink to="/groups" onClick={onClick}>Groups</NavLink>
-            <NavLink to="/list" onClick={onClick}>Demons List</NavLink>
+            <NavLink to="/lists" onClick={onClick}>Lists</NavLink>
+            <NavLink to="/levels" onClick={onClick}>Levels</NavLink>
         </>
     );
 
     const profileDropdown = (open: boolean, onLinkClick: () => void) => (
         <div className={`dropdown ${open ? 'open' : ''}`}>
-            <NavLink to={`/users/${discordId}`} onClick={onLinkClick}>My Profile</NavLink>
-            <NavLink to={`/groups/user/${discordId}`} onClick={onLinkClick}>My Groups</NavLink>
+            <NavLink to={`/users/${user?.discord_id}`} onClick={onLinkClick} end>My Profile</NavLink>
+            <NavLink to={`/users/${user?.discord_id}/levels`} onClick={onLinkClick}>My Levels</NavLink>
+            <NavLink to={`/users//${user?.discord_id}/lists`} onClick={onLinkClick}>My Lists</NavLink>
             <hr />
-            <button className="logout-btn" onClick={() => { handleLogout(); onLinkClick(); }}>Logout</button>
+            <button className="logout-btn" onClick={() => { logout(); onLinkClick(); }}>Logout</button>
         </div>
     );
 
     const userButton = (open: boolean, onToggle: () => void) => (
         <button className="user-btn" onClick={onToggle}>
-            <img src={avatar || PlaceHolderLogo} alt="avatar" />
-            {username || 'User'}
+            <img src={user?.avatar_url || PlaceHolderLogo} alt="avatar" />
+            {user?.username || 'User'}
             <svg className={`chevron ${open ? 'open' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="6 9 12 15 18 9" />
             </svg>
@@ -123,7 +67,7 @@ export default function NavBar() {
     );
 
     const loginButton = (onClick?: () => void) => (
-        <a className="login-link" onClick={(e) => { e.preventDefault(); handleLogin(); onClick?.(); }}>
+        <a className="login-link" onClick={(e) => { e.preventDefault(); login(window.location.pathname); onClick?.();}}>
             <img src={PlaceHolderLogo} alt="Discord" />
             Login
         </a>
@@ -140,7 +84,7 @@ export default function NavBar() {
                 {navLinks()}
             </div>
 
-            {loggedIn ? (
+            {user ? (
                 <div className="user-menu" ref={desktopMenuRef}>
                     {userButton(desktopDropdown, () => setDesktopDropdown(prev => !prev))}
                     {profileDropdown(desktopDropdown, () => setDesktopDropdown(false))}
@@ -155,7 +99,7 @@ export default function NavBar() {
                 </button>
 
                 <div className={`hamburger-menu ${hamburgerOpen ? 'open' : ''}`}>
-                    {loggedIn ? (
+                    {user ? (
                         <div className="mobile-user">
                             {userButton(mobileDropdown, () => setMobileDropdown(prev => !prev))}
                             {profileDropdown(mobileDropdown, closeAll)}

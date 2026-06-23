@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { create } from "zustand";
 
 type ToastData = {
     id: number;
@@ -6,29 +6,32 @@ type ToastData = {
     type: "success" | "error" | "warning";
 };
 
-export function useToast() {
-    const [toasts, setToasts] = useState<ToastData[]>([]);
+type ToastState = {
+    toasts: ToastData[];
+    showToast: (message: string, type?: ToastData["type"]) => void;
+    removeToast: (id: number) => void;
+};
 
-    const showToast = (
-        message: string,
-        type: ToastData["type"] = "success"
-    ) => {
+export const useToast = create<ToastState>((set) => ({
+    toasts: [],
+
+    showToast: (message, type = "success") => {
         const id = Date.now();
 
-        setToasts(prev => [
-            ...prev,
-            { id, message, type }
-        ]);
+        set((state) => ({
+            toasts: [...state.toasts, { id, message, type }],
+        }));
 
         setTimeout(() => {
-            setToasts(prev =>
-                prev.filter(t => t.id !== id)
-            );
+            set((state) => ({
+                toasts: state.toasts.filter((t) => t.id !== id),
+            }));
         }, 3000);
-    };
+    },
 
-    return {
-        toasts,
-        showToast
-    };
-}
+    removeToast: (id) => {
+        set((state) => ({
+            toasts: state.toasts.filter((t) => t.id !== id),
+        }));
+    },
+}));

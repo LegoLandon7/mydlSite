@@ -59,8 +59,8 @@
 
             transition: color 0.15s ease, background 0.15s ease;
 
-            &:hover { color: $accent-hover; background: $border-color; }
-            &.active { color: $accent-active; background: $border-color; }
+            &:hover { color: $text-secondary; background: $background-hover; }
+            &.active { color: $accent-secondary; background: $background-active; }
         }
     }
 
@@ -180,8 +180,8 @@
 
                 transition: background 0.15s ease, color 0.15s ease;
 
-                &:hover { background: $border-color; color: $accent-hover; }
-                &.active { background: $border-color; color: $accent-active; }
+                &:hover { color: $text-secondary; background: $background-hover; }
+                &.active { color: $accent-secondary; background: $background-active; }
             }
 
             hr {

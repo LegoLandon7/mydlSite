@@ -1,282 +1,104 @@
 import aiosqlite
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, field_validator
+from fastapi import APIRouter, Request, HTTPException, Query
+from pydantic import BaseModel
+
 from database.db import DB
 from util.limiter import limiter
-from routers.auth import get_session_user
+
+from routers.levels import Level
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-VIDEO_LINK_PREFIXES = (
-    "https://youtube.com/",
-    "https://www.youtube.com/",
-    "https://youtu.be/",
-    "https://tiktok.com/",
-    "https://www.tiktok.com/",
-    "https://vm.tiktok.com/",
-    "https://twitch.tv/",
-    "https://www.twitch.tv/",
-    "https://clips.twitch.tv/",
-    "https://medal.tv/",
-    "https://www.medal.tv/",
-    "https://streamable.com/",
-    "https://www.streamable.com/",
-    "https://bilibili.com/",
-    "https://www.bilibili.com/",
-    "https://nicovideo.jp/",
-    "https://www.nicovideo.jp/",
-    "https://odysee.com/",
-    "https://www.odysee.com/",
-    "https://rumble.com/",
-    "https://www.rumble.com/",
-)
+# classes
 
-
-def validate_video_url(v: str | None) -> str | None:
-    if v is None:
-        return None
-    if not any(v.startswith(p) for p in VIDEO_LINK_PREFIXES):
-        raise ValueError("Video link must be from a supported platform (YouTube, TikTok, Twitch, etc.)")
-    return v
-
-
-class AddLevel(BaseModel):
-    level_id: int
-    video_link: str | None = None
-    record: int = 100
-
-    @field_validator("record")
-    @classmethod
-    def validate_record(cls, v):
-        if not 1 <= v <= 100:
-            raise ValueError("Record must be between 1 and 100")
-        return v
-
-    @field_validator("video_link")
-    @classmethod
-    def validate_video_link(cls, v):
-        return validate_video_url(v)
-
-
-class UpdateVideo(BaseModel):
-    level_id: int
-    video_link: str | None = None
-
-    @field_validator("video_link")
-    @classmethod
-    def validate_video_link(cls, v):
-        return validate_video_url(v)
-
-
-class UpdateRecord(BaseModel):
-    level_id: int
-    record: int
-
-    @field_validator("record")
-    @classmethod
-    def validate_record(cls, v):
-        if not 1 <= v <= 100:
-            raise ValueError("Record must be between 1 and 100")
-        return v
-
-
-class UpdateDescription(BaseModel):
+class User(BaseModel):
+    discord_id: str
+    username: str
+    avatar_url: str | None = None
     description: str | None = None
 
-    @field_validator("description")
-    @classmethod
-    def validate_description(cls, v):
-        if v is not None:
-            v = v.strip()
-            if len(v) > 500:
-                raise ValueError("Description must be 500 characters or less")
-            if len(v) == 0:
-                return None
-        return v
+class UserResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    users: list[User]
 
+class UserLevels(BaseModel):
+    user: User
+    levels: list[Level]
 
-@router.get("/")
-@limiter.limit("60/minute")
-async def get_all_users(request: Request, page: int = 1):
-    if page < 1:
-        raise HTTPException(status_code=400, detail="Page must be 1 or greater")
-    offset = (page - 1) * 50
-    async with aiosqlite.connect(DB) as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute("SELECT COUNT(*) FROM users") as cursor:
-            total = (await cursor.fetchone())[0]
-        async with db.execute(
-            "SELECT discord_id, username, avatar_url, description FROM users LIMIT 50 OFFSET ?", (offset,)
-        ) as cursor:
-            rows = await cursor.fetchall()
-    return {
-        "page":        page,
-        "per_page":    50,
-        "total":       total,
-        "total_pages": -(-total // 50),
-        "users":       [dict(row) for row in rows]
-    }
+# routers
 
-
-@router.get("/search")
+@router.get("/", response_model = UserResponse)
 @limiter.limit("30/minute")
-async def search_users(request: Request, q: str):
-    if len(q) < 2:
-        raise HTTPException(status_code=400, detail="Query too short")
+async def list_users(request: Request, 
+    limit: int = Query(50, ge=1, le=100), 
+    offset: int = Query(0, ge=0),
+    search: str | None = None
+):
+    search_value = f"%{search.lower()}%" if search else None
+
     async with aiosqlite.connect(DB) as db:
         db.row_factory = aiosqlite.Row
-        async with db.execute(
-            "SELECT discord_id, username, avatar_url, description FROM users WHERE username LIKE ? LIMIT 20",
-            (f"%{q}%",)
-        ) as cursor:
-            rows = await cursor.fetchall()
-    return [dict(row) for row in rows]
 
+        # get users
+        if (search):
+            query = "SELECT * FROM users WHERE lower(username) LIKE ? OR discord_id LIKE ? ORDER BY username LIMIT ? OFFSET ?"
+            parameters = (search_value, search_value, limit, offset)
+        else:
+            query = "SELECT * FROM users ORDER BY username LIMIT ? OFFSET ?"
+            parameters = (limit, offset) 
 
-@router.get("/me/levels")
-@limiter.limit("60/minute")
-async def get_my_levels(request: Request):
-    user_id = get_session_user(request)
-    return await _get_user_levels(user_id)
+        async with db.execute(query, parameters) as c:
+            rows = await c.fetchall()
 
+        users = [User.model_validate(dict(r)) for r in rows]
 
-@router.get("/{discord_id}")
+        # get count
+        if (search):
+            count_query = "SELECT COUNT(*) as count FROM users WHERE lower(username) LIKE ? OR discord_id = ?"
+            count_parameters = (search_value, search_value)
+        else:
+            count_query = "SELECT COUNT(*) as count FROM users"
+            count_parameters = ()
+
+        async with db.execute(count_query, count_parameters) as c:
+            total = (await c.fetchone())["count"]
+
+    return UserResponse(total=total, limit=limit, offset=offset, users=users)
+
+@router.get("/{discord_id}", response_model = User)
 @limiter.limit("60/minute")
 async def get_user(request: Request, discord_id: str):
     async with aiosqlite.connect(DB) as db:
         db.row_factory = aiosqlite.Row
-        async with db.execute(
-            "SELECT discord_id, username, avatar_url, description FROM users WHERE discord_id = ?", (discord_id,)
-        ) as cursor:
-            row = await cursor.fetchone()
-    if not row:
-        raise HTTPException(status_code=404, detail="User not found")
-    return dict(row)
 
+        async with db.execute("SELECT * FROM users WHERE discord_id = ?", (discord_id,),) as c:
+            user = await c.fetchone()
 
-@router.get("/{discord_id}/levels")
-@limiter.limit("60/minute")
+    if not user:
+        raise HTTPException(404, "User not found")
+    
+    user_obj = User.model_validate(dict(user))
+    return user_obj
+
+@router.get("/{discord_id}/levels", response_model = UserLevels)
+@limiter.limit("30/minute")
 async def get_user_levels(request: Request, discord_id: str):
-    return await _get_user_levels(discord_id)
-
-
-@router.patch("/me/description")
-@limiter.limit("10/minute")
-async def update_description(request: Request, body: UpdateDescription):
-    user_id = get_session_user(request)
-    async with aiosqlite.connect(DB) as db:
-        await db.execute(
-            "UPDATE users SET description = ? WHERE discord_id = ?",
-            (body.description, user_id)
-        )
-        await db.commit()
-    return {"success": True}
-
-
-async def _get_user_levels(user_id: str):
     async with aiosqlite.connect(DB) as db:
         db.row_factory = aiosqlite.Row
-        async with db.execute("""
-            SELECT l.level_id, l.name, l.position, l.link, l.description,
-                   ul.video_link, ul.record
-            FROM levels l
-            JOIN user_list ul ON l.level_id = ul.level_id
-            WHERE ul.user_id = ?
-            ORDER BY l.position
-        """, (user_id,)) as cursor:
-            rows = await cursor.fetchall()
-    return [dict(r) for r in rows]
 
+        # get levels
+        async with db.execute("SELECT l.* FROM user_levels u JOIN levels l ON u.level_id = l.level_id WHERE u.discord_id = ? ORDER BY l.position", (discord_id,),) as c:
+            levels = await c.fetchall()
+        
+        # get user
+        async with db.execute("SELECT * FROM users WHERE discord_id = ?", (discord_id,),) as c:
+            user = await c.fetchone()
 
-@router.post("/me/levels")
-@limiter.limit("30/minute")
-async def add_level(request: Request, body: AddLevel):
-    user_id = get_session_user(request)
+    if not user:
+        raise HTTPException(404, "User not found")
 
-    async with aiosqlite.connect(DB) as db:
-        async with db.execute(
-            "SELECT level_id FROM levels WHERE level_id = ?", (body.level_id,)
-        ) as cursor:
-            if not await cursor.fetchone():
-                raise HTTPException(status_code=404, detail="Level not found")
-
-        async with db.execute(
-            "SELECT 1 FROM user_list WHERE user_id = ? AND level_id = ?",
-            (user_id, body.level_id)
-        ) as cursor:
-            if await cursor.fetchone():
-                raise HTTPException(status_code=409, detail="Level already added")
-
-        await db.execute("""
-            INSERT INTO user_list (user_id, level_id, video_link, record)
-            VALUES (?, ?, ?, ?)
-        """, (user_id, body.level_id, body.video_link, body.record))
-        await db.commit()
-
-    return {"success": True}
-
-
-@router.delete("/me/levels/{level_id}")
-@limiter.limit("30/minute")
-async def remove_level(request: Request, level_id: int):
-    user_id = get_session_user(request)
-
-    async with aiosqlite.connect(DB) as db:
-        async with db.execute(
-            "SELECT 1 FROM user_list WHERE user_id = ? AND level_id = ?",
-            (user_id, level_id)
-        ) as cursor:
-            if not await cursor.fetchone():
-                raise HTTPException(status_code=404, detail="Level not in your list")
-
-        await db.execute(
-            "DELETE FROM user_list WHERE user_id = ? AND level_id = ?",
-            (user_id, level_id)
-        )
-        await db.commit()
-
-    return {"success": True}
-
-
-@router.patch("/me/levels/video")
-@limiter.limit("20/minute")
-async def update_video(request: Request, body: UpdateVideo):
-    user_id = get_session_user(request)
-
-    async with aiosqlite.connect(DB) as db:
-        async with db.execute(
-            "SELECT 1 FROM user_list WHERE user_id = ? AND level_id = ?",
-            (user_id, body.level_id)
-        ) as cursor:
-            if not await cursor.fetchone():
-                raise HTTPException(status_code=404, detail="Level not in your list")
-
-        await db.execute(
-            "UPDATE user_list SET video_link = ? WHERE user_id = ? AND level_id = ?",
-            (body.video_link, user_id, body.level_id)
-        )
-        await db.commit()
-
-    return {"success": True}
-
-
-@router.patch("/me/levels/record")
-@limiter.limit("20/minute")
-async def update_record(request: Request, body: UpdateRecord):
-    user_id = get_session_user(request)
-
-    async with aiosqlite.connect(DB) as db:
-        async with db.execute(
-            "SELECT 1 FROM user_list WHERE user_id = ? AND level_id = ?",
-            (user_id, body.level_id)
-        ) as cursor:
-            if not await cursor.fetchone():
-                raise HTTPException(status_code=404, detail="Level not in your list")
-
-        await db.execute(
-            "UPDATE user_list SET record = ? WHERE user_id = ? AND level_id = ?",
-            (body.record, user_id, body.level_id)
-        )
-        await db.commit()
-
-    return {"success": True}
+    user_obj = User.model_validate(dict(user))
+    levels_obj = [Level.model_validate(dict(r)) for r in levels]
+    return UserLevels(user=user_obj, levels=levels_obj)

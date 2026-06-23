@@ -29,6 +29,23 @@
 
     margin-right: $space-md;
 
+    button {
+        width: 100%;
+        padding: $space-sm;
+        border-radius: 0;
+        color: $text-secondary;
+        background-color: $background-strong;
+        height: 48px;
+        font-size: $font-md;
+        cursor: pointer;
+
+        transition: background-color 0.2s ease;
+
+        &:hover {
+            background-color: $background-hover;
+        }
+    }
+
     .search {
         display: flex;
         flex-direction: row;
@@ -80,9 +97,7 @@
         width: 100%;
 
         img {
-            height: 32px;
-            width: 32px;
-            border-radius: $radius-xl;
+
         }
 
         h1 {font-size: $font-md; }
@@ -109,63 +124,14 @@
     height: 85vh;
     width: 100%;
 
-    overflow-x: hidden;
     overflow-y: scroll;
 
     border: 3px solid $border-strong;
     border-radius: $radius-sm;
 
-    .user-navbar {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
-
-        width: 100%;
-        padding: $space-sm;
-        gap: $space-lg;
-
-        a {
-            color: $text-primary;
-            font-size: $font-md;
-            padding: $space-md;
-            border-radius: $radius-md;
-            width: 100%;
-            text-align: center;
-            background: $background-strong;
-
-            transition: background 0.2s ease;
-
-            &:hover {
-                background: $background-hover;
-            }
-
-            &.active {
-                background: $background-active;
-            }
-        }
-
-
-    }
-
-    hr {
-        width: 90%;
-        height: 2px;
-        border: 2px solid $border-strong;
-    }
-
-    .header {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
-        gap: $space-md;
-
-        img {
-            width: 64px;
-            height: 64px;
-            border-radius: $radius-md;
-        }
+    h1 {
+        font-size: $font-xxl;
+        text-shadow: $text-shadow-xl;
     }
 
     .error {
@@ -199,25 +165,6 @@
         width: 80%;
         height: auto;
 
-        button {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            align-items: center;
-            gap: $space-xs;
-
-            color: $text-primary;
-
-            padding: $space-sm;
-            cursor: pointer;
-
-            img {
-                width: 23px;
-                height: 24px;
-                border-radius: $radius-sm;
-            }
-        }
-
         .detail {
             display: flex;
             flex-direction: row;
@@ -239,69 +186,126 @@
     }
 }
 
-.overlay {
-    // top: 25vh;
-    // left: 25vw;
-    position: fixed;
-    width: 50vw;
-    height: 50vh;
-    display: none;
-    background-color: $background-strong;
-
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-
-    gap: $space-sm;
-    padding: $space-lg;
-
-    border: 4px solid $border-strong;
-    border-radius: $radius-md;
+.modal-background {
     z-index: 1001;
+    background-color: rgba(0, 0, 0, 0.8);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+}
 
-    &::after {
-        content: "";
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: -1;
-    }
+.modal-viewport {
+    z-index: 1002;
+    position: fixed;
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
 
-    .header {
+    top: 5vh;
+    left: 5vw;
+
+    width: 90vw;
+    height: 90vh;
+    min-width: 0;
+
+    background-color: $background-subtle;
+    border: 4px solid $border-subtle;
+    border-radius: $radius-lg;
+
+    padding: $space-sm $space-xl;
+
+    .info {
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+
         display: flex;
         flex-direction: row;
         justify-content: center;
-        align-items: flex-end;
-        gap: $space-xl;
+        align-items: center;
 
-        h1 { font-size: $font-xl; }
-    }
+        gap: $space-sm;
 
-    textarea {
-        flex: 1;
-        box-sizing: border-box;
-        min-width: 0;
-        max-width: 100%;
-        width: 100%;
-        background-color: $background-subtle;
-        border: none;
-        padding: $space-sm;
-        resize: none;
-        font-size: $font-lg;
+        .section {
+            width: 100%;
+            height: 100%;
+            min-width: 0;
 
-        color: $text-secondary;
-        font-size: $font-md;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
 
-        &:focus {
-            border: none;
-            outline: none;
+            gap: $space-sm;
+
+            .entry {
+                display: flex;
+                flex-direction: column;
+                gap: $space-xs;
+
+                width: 100%;
+                height: 100%;
+
+                .entry-detail {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: flex-start;
+                    align-items: center;
+
+                    gap: $space-xs;
+                }
+
+                input, textarea {
+                    background-color: $background-strong;
+                    border: 2px solid $border-strong;
+                    color: $text-primary;
+                    font-size: $font-md;
+
+                    transition: background-color 0.15s ease;
+
+                    &:focus {
+                        border: 2px solid $border-strong;
+                        outline: none;
+
+                        background-color: $background-active;
+                    }
+                }
+
+                input {
+                    width: 90%;
+                    height: auto;
+                }
+
+                textarea {
+                    width: 100%;
+                    height: 100%;
+                    resize: none;
+                    min-width: 0;
+                    max-width: 100%;
+                    -webkit-box-sizing: border-box;
+                    -moz-box-sizing: border-box;
+                    box-sizing: border-box;
+                }
+            }
+        }
+
+        .small {
+            flex: 1;
+        }
+
+        .big {
+            flex: 2;
         }
     }
 
-    .overlay-menu {
+    .buttons {
+        width: 100%;
+        height: 100%;
+
         display: flex;
         flex-direction: row;
         justify-content: center;
@@ -309,17 +313,16 @@
 
         gap: $space-md;
 
-        width: 100%;
-        height: auto;
-
         button {
-            cursor: pointer;
-            flex: 1;
+            width: 100%;
             height: 64px;
-            font-size: $font-md;
-            color: $text-secondary;
-
+            cursor: pointer;
+            
             transition: background-color 0.2s ease;
+            background-color: $background-strong;
+
+            color: $text-primary;
+            font-size: $font-lg;
 
             &:hover {
                 background-color: $background-hover;
@@ -329,6 +332,20 @@
 }
 
 @media screen and (max-width: $mobile-breakpoint) {
+    .modal-viewport {
+        .info {
+            flex-direction: column;
+        }
+
+        .buttons {
+            flex-direction: column;
+
+            button {
+                width: 100%;
+            }
+        }
+    }
+
     .viewport {
         display: flex;
         overflow-x: auto;
@@ -346,31 +363,5 @@
         height: 70vh;
 
         scroll-snap-align: center;
-    }
-
-    .overlay {
-        
-        .menu {
-            flex-direction: column;
-        }
-    }
-
-    .page {
-
-        .info {
-
-            .detail {
-                align-items: flex-start;
-                flex-direction: column;
-            }
-        }
-
-        .header {
-
-            img {
-                width: 48px;
-                height: 48px;
-            }
-        }
     }
 }

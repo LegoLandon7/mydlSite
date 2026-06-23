@@ -3,9 +3,9 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import Home from './pages/Home';
-import List from './pages/List';
+import Levels from './pages/Levels';
 import Users from './pages/Users';
-import Groups from './pages/Groups';
+import Lists from './pages/Lists';
 
 import NavBar from './components/NavBar';
 import Footer from './components/Footer';
@@ -13,27 +13,31 @@ import Footer from './components/Footer';
 import ScrollToTop from './util/ScrollToTop';
 
 import './index.scss';
+import AuthInit from './api/call/auth/AuthInit';
+import Toast from './components/Toast';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <ScrollToTop />
-      <NavBar />
-      <div className='main-content'>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/list" element={<List />} />
-          <Route path="/list/:id" element={<List />} />
-          <Route path="/users" element={<Users />} />
-          <Route path="/users/:id" element={<Users />} />
-          <Route path="/users/:id/list" element={<Users />} />
-          <Route path="/users/:id/groups" element={<Users />} />
-          <Route path="/groups" element={<Groups />} />
-          <Route path="/groups/:id" element={<Groups />} />
-          <Route path="/groups/user/:id" element={<Groups />} />
-        </Routes>
-      </div>
-      <Footer />
+      <AuthInit>
+        <ScrollToTop />
+        <Toast />
+          <NavBar />
+          <div className='main-content'>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/levels" element={<Levels />} />
+              <Route path="/levels/:id" element={<Levels />} />
+              <Route path="/users" element={<Users />} />
+              <Route path="/users/:id" element={<Users />} />
+              <Route path="/users/:id/list" element={<Users />} />
+              <Route path="/users/:id/groups" element={<Users />} />
+              <Route path="/lists" element={<Lists />} />
+              <Route path="/lists/:id" element={<Lists />} />
+            </Routes>
+          </div>
+          <Footer />
+      </AuthInit>
     </BrowserRouter>
   </StrictMode>
 );

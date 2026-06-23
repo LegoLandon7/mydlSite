@@ -8,13 +8,15 @@ from database.db import init_db
 
 load_dotenv()
 
-from routers import levels, auth, users, submissions, notifications
+from routers import auth, levels, users, lists
 
-app = FastAPI(title="MYODL API", version="1.0.0", docs_url=None)
+app = FastAPI(title="MYODL API", version="1.0.0")
+
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://myodl.net", "http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[FRONTEND_URL],
     allow_credentials=True,
     allow_headers=["*"],
     allow_methods=["*"],
@@ -30,16 +32,11 @@ app.add_middleware(
 async def startup():
     await init_db()
 
-app.include_router(levels.router)
 app.include_router(auth.router)
+app.include_router(levels.router)
 app.include_router(users.router)
-app.include_router(notifications.router)
-app.include_router(submissions.router)
+app.include_router(lists.router)
 
 @app.get("/", tags=["misc"])
 async def root():
     return {"status": "ok"}
-
-@app.get("/docs")
-async def docs():
-    return FileResponse("docs.html")
