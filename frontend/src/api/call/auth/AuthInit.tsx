@@ -19,7 +19,7 @@ export default function AuthInit({ children }: { children: React.ReactNode }) {
         }
     }, [initialized, user]);
 
-    if (!initialized) return <h1>loading...</h1>;
+    //if (!initialized) return <h1>loading...</h1>;
 
     return <>{children}</>;
 }

@@ -132,7 +132,7 @@ $z5: 10000;
 
 // scrollbar
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 16px;
 }
 
 ::-webkit-scrollbar-track {
@@ -143,6 +143,8 @@ $z5: 10000;
   background: $background-strong;
   border-radius: $radius-xl;
   border: 2px solid $background-subtle;
+  min-height: 40px;
+  width: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -234,6 +236,7 @@ body {
 
   width: 100%;
   max-width: $max-width;
+  min-height: 80vh;
 
   margin: 0 auto;
   margin-top: $navbar-height;

@@ -2,7 +2,7 @@ export type Level = {
     level_id: number;
     name: string;
     position: number;
-    aredl_url: string;
+    aredl_url: string | null;
     thumbnail_url: string | null;
     description: string | null;
 }

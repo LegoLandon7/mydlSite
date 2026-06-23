@@ -13,6 +13,7 @@ class Level(BaseModel):
     level_id: int
     name: str
     position: int
+    aredl_url: str | None = None
     thumbnail_url: str | None = None
     description: str | None = None
 

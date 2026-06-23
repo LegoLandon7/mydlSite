@@ -8,7 +8,7 @@ export default function Lists() {
     <>
 
     <SiteHeader 
-    head="Groups soon to come!" 
+    head="Lists soon to come!" 
     subhead="im too lazy to code this rn" />
     </>
   );

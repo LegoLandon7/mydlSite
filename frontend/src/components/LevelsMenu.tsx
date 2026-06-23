@@ -195,6 +195,8 @@ export default function LevelsMenu() {
                         <h1>Level ID:</h1>
                         <h2>{level.level_id}</h2>
                     </div>
+
+                    {level.aredl_url && ( <a href={level.aredl_url} target="_blank" rel="noopener noreferrer">View on AREDL</a> )}
                 </div>
 
                 {level.description && (
