@@ -104,9 +104,7 @@
         border-right: 2px solid $border-subtle;
         width: 100%;
 
-        img {
-
-        }
+        transition: background-color 0.1s ease;
 
         h1 {font-size: $font-md; }
         h2 { font-size: $font-md; }
@@ -114,6 +112,98 @@
         &.active { background-color: $background-active; }
         &:hover { background-color: $background-hover; }
     }
+}
+
+.menu-footer {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-top: auto;
+    width: 100%;
+    padding: $space-sm;
+
+    border-top: 2px solid $border-subtle;
+
+    .pagination {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: $space-xs;
+
+        button {
+            background-color: $background-strong;
+            border: 2px solid $border-strong;
+            color: $text-primary;
+            font-size: $font-md;
+            padding: $space-xs $space-sm;
+            cursor: pointer;
+            border-radius: $radius-sm;
+
+            transition: background-color 0.2s ease;
+
+            &:hover:not(:disabled) { background-color: $background-hover; }
+            &:disabled { opacity: 0.4; cursor: default; }
+        }
+
+        span { font-size: $font-md; color: $text-secondary; }
+    }
+}
+
+.page-navbar {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+
+    width: 100%;
+    padding-bottom: $space-sm;
+    border-bottom: 2px solid $border-subtle;
+
+    .page-tabs {
+        display: flex;
+        flex-direction: row;
+        gap: $space-xs;
+
+        button {
+            background-color: $background-strong;
+            border: 2px solid $border-strong;
+            color: $text-secondary;
+            font-size: $font-md;
+            padding: $space-xs $space-md;
+            cursor: pointer;
+            border-radius: $radius-sm;
+
+            transition: background-color 0.2s ease, color 0.2s ease;
+
+            &:hover { background-color: $background-hover; }
+            &.active {
+                background-color: $background-active;
+                color: $text-primary;
+            }
+        }
+    }
+}
+
+.refresh-btn {
+    background-color: $background-strong;
+    border: 2px solid $border-strong;
+    color: $text-primary;
+    font-size: $font-lg;
+    padding: $space-xs $space-sm;
+    cursor: pointer;
+    border-radius: $radius-sm;
+
+    transition: background-color 0.2s ease;
+
+    &:hover { background-color: $background-hover; }
+}
+
+.menu-loading {
+    padding: $space-md;
+    color: $text-secondary;
+    font-size: $font-md;
 }
 
 .page {

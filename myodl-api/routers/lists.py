@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from database.db import DB
 from util.limiter import limiter
 
-from routers.auth import get_current_user
+from core.auth import get_current_user
 
 router = APIRouter(prefix="/lists", tags=["lists"])
 
@@ -14,28 +14,7 @@ from routers.users import User
 
 # classes
 
-class List(BaseModel):
-    list_id: int
-    owner_discord_id: str
-    name: str
-    description: str | None = None
-    community_url: str | None = None
-    icon_link: str | None = None
-
-class ListResponse(BaseModel):
-    total: int
-    limit: int
-    offset: int
-    lists: list[List]
-
-class ListLevels(BaseModel):
-    list: List
-    levels: list[Level]
-
-class ListMember(BaseModel):
-    user: User
-    role: str
-    joined_at: str
+from models import *
 
 # helpers
 
@@ -140,3 +119,66 @@ async def list_members(request: Request, list_id: int):
     members_obj = [ListMember(user=User.model_validate({k: r[k] for k in r.keys() if k in User.model_fields}),
             role=r["role"], joined_at=r["joined_at"],) for r in members]
     return members_obj
+
+@router.get("/{list_id}/{level_id}/records", response_model=ListRecords)
+@limiter.limit("30/minute")
+async def get_level_records(request: Request, list_id: int, level_id: int):
+
+    async with aiosqlite.connect(DB) as db:
+        db.row_factory = aiosqlite.Row
+
+        async with db.execute(
+            "SELECT 1 FROM lists WHERE list_id = ?", (list_id,)
+        ) as c:
+            list_exists = await c.fetchone()
+
+        if not list_exists:
+            raise HTTPException(404, "List not found")
+
+        async with db.execute(
+            "SELECT 1 FROM levels WHERE level_id = ?", (level_id,)
+        ) as c:
+            level_exists = await c.fetchone()
+
+        if not level_exists:
+            raise HTTPException(404, "Level not found")
+
+        async with db.execute(
+            "SELECT u.discord_id AS user_discord_id, u.username AS user_username, u.avatar_url AS user_avatar_url, u.description AS user_description, le.level_id, le.name AS level_name, le.position AS level_position, le.aredl_url, le.thumbnail_url, le.description AS level_description, li.list_id, li.owner_discord_id, li.name AS list_name, li.description AS list_description, li.community_url, li.icon_url, li.public, lr.record FROM list_records lr JOIN users u ON u.discord_id = lr.discord_id JOIN levels le ON le.level_id = lr.level_id JOIN lists li ON li.list_id = lr.list_id WHERE lr.list_id = ? AND lr.level_id = ? ORDER BY lr.record DESC;", (list_id, level_id),
+        ) as c:
+            rows = await c.fetchall()
+
+    if not rows:
+        return ListRecords(list=None,user=None,records=[])
+
+    return ListRecords(
+        list=List(
+            list_id=rows[0]["list_id"],
+            owner_discord_id=rows[0]["owner_discord_id"],
+            name=rows[0]["list_name"],
+            description=rows[0]["list_description"],
+            community_url=rows[0]["community_url"],
+            icon_url=rows[0]["icon_url"],
+            public=bool(rows[0]["public"]),
+        ),
+        user=User(
+            discord_id=rows[0]["user_discord_id"],
+            username=rows[0]["user_username"],
+            avatar_url=rows[0]["user_avatar_url"],
+            description=rows[0]["user_description"],
+        ),
+        records=[
+            ListRecord(
+                level=Level(
+                    level_id=row["level_id"],
+                    name=row["level_name"],
+                    position=row["level_position"],
+                    aredl_url=row["aredl_url"],
+                    thumbnail_url=row["thumbnail_url"],
+                    description=row["level_description"],
+                ),
+                record=row["record"],
+            )
+            for row in rows
+        ]
+    )

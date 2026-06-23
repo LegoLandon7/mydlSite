@@ -1,219 +1,280 @@
 import './UsersMenu.scss';
 
-import { NavLink, useNavigate, useParams } from 'react-router';
-import { useEffect, useRef, useState } from 'react';
+import { NavLink, useParams } from 'react-router';
+import { useEffect, useState } from 'react';
 
 import SearchIcon from '../../assets/icons/search.svg';
-import SiteHeader from '../web/SiteHeader';
 
-import { useLevels } from '../../api/call/levels/levelsStore';
-import { useToast } from '../../util/useToast';
+import { useUsers } from '../../api/call/users/usersStore';
 import { useAuth } from '../../api/call/auth/auth';
 
-import type { Level } from '../../api/types/levels';
+import type { User, UserDetails } from '../../api/types/users';
+
+const PAGE_LIMIT = 20;
+type Tab = 'details' | 'levels' | 'lists';
 
 export default function UsersMenu() {
-    // load levels
-    const levels = useLevels((s) => s.levels);
-    const loadLevels = useLevels((s) => s.loadLevels);
-    const loading = useLevels((s) => s.loading);
+    const loadPage = useUsers((s) => s.loadPage);
+    const getPage = useUsers((s) => s.getPage);
+    const loadUserDetails = useUsers((s) => s.loadUserDetails);
+    const getUserDetails = useUsers((s) => s.getUserDetails);
+    const loadingPage = useUsers((s) => s.loadingPage);
+    const loadingUser = useUsers((s) => s.loadingUser);
+
+    const [users, setUsers] = useState<User[]>([]);
+    const [total, setTotal] = useState(0);
+    const [page, setPage] = useState(0);
+    const [details, setDetails] = useState<UserDetails | null>(null);
+    const [searchText, setSearchText] = useState('');
+    const [tab, setTab] = useState<Tab>('details');
+
+    const { id } = useParams();
+    const offset = page * PAGE_LIMIT;
 
     useEffect(() => {
-        loadLevels();
-    }, [loadLevels]);
+        const cached = getPage(offset);
+        if (cached) {
+            setUsers(cached.users);
+            setTotal(cached.total);
+            return;
+        }
+        loadPage(offset).then((data) => {
+            setUsers(data.users);
+            setTotal(data.total);
+        }).catch(() => {});
+    }, [offset, loadPage, getPage]);
 
-    // get level
-    const [searchText, setSearchText] = useState("");
-    const { id } = useParams();
-    const navigate = useNavigate();
+    useEffect(() => {
+        if (!id) { setDetails(null); return; }
+        const cached = getUserDetails(id);
+        if (cached) { setDetails(cached); return; }
+        loadUserDetails(id).then(setDetails).catch(() => setDetails(null));
+    }, [id, loadUserDetails, getUserDetails]);
 
-    const numericId = id ? Number(id) : null;
-    const level = numericId ? levels.find(l => l.level_id === numericId) : undefined;
+    const handleRefreshMenu = () => {
+        loadPage(offset, true).then((data) => {
+            setUsers(data.users);
+            setTotal(data.total);
+        }).catch(() => {});
+    };
+
+    const handleRefreshUser = () => {
+        if (!id) return;
+        loadUserDetails(id, true).then(setDetails).catch(() => setDetails(null));
+    };
+
+    const totalPages = Math.ceil(total / PAGE_LIMIT);
     const query = searchText.toLowerCase();
 
-    useEffect(() => {
-        if (!id && levels.length > 0) {
-            const first = levels.find(l => l.position === 1) ?? levels[0];
-            navigate(`/users/${first.level_id}`, { replace: true });
-        }
-    }, [id, levels, navigate]);
-
-    const [inputLevel, setInputLevel] = useState<Partial<Level>>({
-        level_id: undefined,
-        name: "",
-        position: undefined,
-        thumbnail_url: "",
-        description: "",
-    });
-
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const [showModal, setShowModal] = useState(false);
+    const filteredUsers = users.filter((u) =>
+        u.username.toLowerCase().includes(query) ||
+        u.discord_id.includes(query)
+    );
 
     const { user } = useAuth();
-    const { showToast } = useToast();
+    const [showDescModal, setShowDescModal] = useState(false);
+    const [descInput, setDescInput] = useState('');
 
-    const handleSubmit = () => {
-        if (!inputLevel.level_id) {
-            showToast("Level ID is required and must be a number", "error");
-            return;
-        }
-        if (!inputLevel.name?.trim()) {
-            showToast("Level name is required", "error");
-            return;
-        }
+    const canEdit = user && details && (user.discord_id === details.user.discord_id || user.admin);
 
-        showToast("Level successfully submitted", "success");
-        setInputLevel({});
-        setShowModal(false);
+    const handleDescSubmit = async () => {
+        if (!id) return;
+        try {
+            const res = await fetch(`${API_URL}/users/${id}/description`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ description: descInput }),
+            });
+            if (!res.ok) throw new Error();
+            await loadUserDetails(id, true).then(setDetails);
+            setShowDescModal(false);
+        } catch {
+            // handle error
+        }
     };
 
     return (
-    <div className="viewport" ref={scrollRef}>
-        {/* submit level */}
-        {showModal && <>
-        <div className="modal-background"></div>
-        <div className="modal-viewport">
-            <SiteHeader head="Add new level" subhead="this level will be publicly available for everyone and placed by our admin team" />
-
-            <div className="info">
-                <div className="section small">
-                    <div className="entry">
-                        <div className="entry-detail">
-                            <h3>level id</h3>
-                            <p>* - id of level in gd</p>
-                        </div>
-                        <input 
-                            maxLength={11}
-                            value={inputLevel.level_id ?? ""}
-                            onChange={(e) => setInputLevel({ ...inputLevel, level_id: Number(e.target.value.replace(/\D/g, ""))})}>
-                        </input>
-                    </div>
-
-                    <div className="entry">
-                        <div className="entry-detail">
-                            <h3>level name</h3>
-                            <p>* - name of level in gd</p>
-                        </div>
-                        <input 
-                            maxLength={25}
-                            value={inputLevel.name ?? ""}
-                            onChange={(e) => setInputLevel({ ...inputLevel, name: e.target.value })}>
-                        </input>
-                    </div>
-
-                    <div className="entry">
-                        <div className="entry-detail">
-                            <h3>level position</h3>
-                            <p>  - estimate on the placement #</p>
-                        </div>
-                        <input 
-                            maxLength={6}
-                            value={inputLevel.position ?? ""}
-                            onChange={(e) => setInputLevel({ ...inputLevel, position: Number(e.target.value.replace(/\D/g, "")) })}>
-                        </input>
-                    </div>
-
-                    <div className="entry">
-                        <div className="entry-detail">
-                            <h3>level thumbnail</h3>
-                            <p>  - url to an image</p>
-                        </div>
-                        <input
-                            value={inputLevel.thumbnail_url ?? ""}
-                            onChange={(e) => setInputLevel({ ...inputLevel, thumbnail_url: e.target.value })}>
-                         </input>
-                    </div>
-                </div>
-                <div className="section big">
-                    <div className="entry">
-                        <div className="entry-detail">
-                            <h3>level description</h3>
-                            <p>  - information about level</p>
-                        </div>
-                        <textarea 
-                            maxLength={500}
-                            value={inputLevel.description ?? ""} 
-                            onChange={(e) => setInputLevel({ ...inputLevel, description: e.target.value })}>
-                        </textarea>
-                    </div>
-                </div>
-            </div>
-
-            <div className="buttons">
-                <button onClick={() => handleSubmit()}>Submit Level</button>
-                <button onClick={() => {setShowModal(false); setInputLevel({});}}>Exit</button>
-            </div>
-        </div>
-        </>}
-
-        <div className={`menu`}>
-            <div className="search">
-                <img src={SearchIcon}></img>
-                <input value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder="Search by username or ID..."/>
-            </div>
-
-            {levels.filter((level) => {
-                return (
-                    level.name.toLowerCase().includes(query) ||
-                    level.position.toString().includes(query) ||
-                    level.level_id.toString().includes(query)
-                );
-            }).map((level) => {
-                return (<NavLink key={level.level_id} to={`/levels/${level.level_id}`}
-                className="menu-item" onClick={() => scrollRef.current?.scrollTo({left: 0, behavior: 'smooth'})}>
-                    <h1>{`#${level.position}`}</h1>
-                    <h2>{level.name}</h2>
-                </NavLink>);
-            })}
-        </div>
-
-        {loading && levels.length === 0 ? (
-            <div className="page">
-                <div className="error">
-                    <h1>⏳ Loading</h1>
-                    <h3>Fetching levels, please wait...</h3>
-                </div>
-            </div>
-        ) : !id ? (
-            <div className="page">
-                <div className="error">
-                    <h1>⚠️ No level selected</h1>
-                    <h3>Please select a level using the menu</h3>
-                </div>
-            </div>
-        ) : level ? (
-            <div className="page" style={{ backgroundImage: `url(${level.thumbnail_url})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
-                <h1>{level.name}</h1>
-
-                <div className="info">
-                    <div className="detail">
-                        <h1>Position:</h1>
-                        <h2>#{level.position}</h2>
-                    </div>
-
-                    <div className="detail">
-                        <h1>Level ID:</h1>
-                        <h2>{level.level_id}</h2>
-                    </div>
-
-                    {level.aredl_url && ( <a href={level.aredl_url} target="_blank" rel="noopener noreferrer">View on AREDL</a> )}
+        <div className="viewport">
+            <div className="menu">
+                <div className="search">
+                    <img src={SearchIcon} alt="search" />
+                    <input
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        placeholder="Search by username or ID..."
+                    />
                 </div>
 
-                {level.description && (
-                    <div className="info">
-                        <div className="detail">
-                            <h1>{level.description}</h1>
-                        </div>
-                    </div>
+                {loadingPage && users.length === 0 ? (
+                    <div className="menu-loading">Loading...</div>
+                ) : (
+                    filteredUsers.map((user) => (
+                        <NavLink
+                            key={user.discord_id}
+                            to={`/users/${user.discord_id}`}
+                            className="menu-item"
+                        >
+                            {user.avatar_url && (
+                                <img className="menu-avatar" src={user.avatar_url} alt={user.username} />
+                            )}
+                            <h2>{user.username}</h2>
+                        </NavLink>
+                    ))
                 )}
-            </div>
-        ) : (
-            <div className="page">
-                <div className="error">
-                    <h1>⚠️ Level not found</h1>
-                    <h3>Check if your link / id is correct</h3>
+
+                <div className="menu-footer">
+                    {totalPages > 1 && (
+                        <div className="pagination">
+                            <button disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>←</button>
+                            <span>{page + 1} / {totalPages}</span>
+                            <button disabled={page >= totalPages - 1} onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}>→</button>
+                        </div>
+                    )}
+                    <button className="refresh-btn" onClick={handleRefreshMenu}>↺</button>
                 </div>
             </div>
-        )}
-    </div>);
+
+            {loadingUser && !details ? (
+                <div className="page">
+                    <div className="error">
+                        <h1>⏳ Loading</h1>
+                        <h3>Fetching user, please wait...</h3>
+                    </div>
+                </div>
+            ) : !id ? (
+                <div className="page">
+                    <div className="error">
+                        <h1>👤 No user selected</h1>
+                        <h3>Select a user from the menu</h3>
+                    </div>
+                </div>
+            ) : details ? (
+                <div className="page">
+                    <div className="page-navbar">
+                        <div className="page-tabs">
+                            <button className={tab === 'details' ? 'active' : ''} onClick={() => setTab('details')}>Details</button>
+                            <button className={tab === 'levels' ? 'active' : ''} onClick={() => setTab('levels')}>Levels</button>
+                            <button className={tab === 'lists' ? 'active' : ''} onClick={() => setTab('lists')}>Lists</button>
+                        </div>
+                        <button className="refresh-btn" onClick={handleRefreshUser}>↺</button>
+                    </div>
+
+                    {tab === 'details' && (
+                        <>
+                            <h1>{details.user.username}</h1>
+
+                            <div className="info">
+                                <div className="detail">
+                                    <h1>Username:</h1>
+                                    <h2>{details.user.username}</h2>
+                                </div>
+                                <div className="detail">
+                                    <h1>Discord ID:</h1>
+                                    <h2>{details.user.discord_id}</h2>
+                                </div>
+                                {details.admin && (
+                                    <div className="detail">
+                                        <h1>Role:</h1>
+                                        <h2>{details.owner ? '👑 Owner' : '🛡️ Admin'}</h2>
+                                    </div>
+                                )}
+                            </div>
+
+                            {details.user.description ? (
+                                <div className="info">
+                                    <div className="detail">
+                                        <h2>{details.user.description}</h2>
+                                    </div>
+                                    {canEdit && (
+                                        <button onClick={() => { setDescInput(details.user.description ?? ''); setShowDescModal(true); }}>
+                                            Edit Description
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="info">
+                                    <div className="detail">
+                                        <h3>no description provided...</h3>
+                                    </div>
+                                    {canEdit && (
+                                        <button onClick={() => { setDescInput(''); setShowDescModal(true); }}>
+                                            Add Description
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {tab === 'levels' && (
+                        <>
+                            <h1>Levels</h1>
+                            {details.levels && details.levels.length > 0 ? (
+                                <div className="info">
+                                    {details.levels.map((level) => (
+                                        <div className="detail" key={level.level_id}>
+                                            <h1>#{level.position}</h1>
+                                            <h2>{level.name}</h2>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="error"><h3>No levels found</h3></div>
+                            )}
+                        </>
+                    )}
+
+                    {tab === 'lists' && (
+                        <>
+                            <h1>Lists</h1>
+                            {details.lists && details.lists.length > 0 ? (
+                                <div className="info">
+                                    {details.lists.map((list) => (
+                                        <div className="detail" key={list.list_id}>
+                                            <h2>{list.name}</h2>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="error"><h3>No lists found</h3></div>
+                            )}
+                        </>
+                    )}
+                </div>
+            ) : (
+                <div className="page">
+                    <div className="error">
+                        <h1>⚠️ User not found</h1>
+                        <h3>Check if the ID is correct</h3>
+                    </div>
+                </div>
+            )}
+
+            {showDescModal && <>
+            <div className="modal-background" onClick={() => setShowDescModal(false)}></div>
+            <div className="modal-viewport">
+                <div className="info">
+                    <div className="section big">
+                        <div className="entry">
+                            <div className="entry-detail">
+                                <h3>description</h3>
+                                <p> - shown on your profile</p>
+                            </div>
+                            <textarea
+                                maxLength={500}
+                                value={descInput}
+                                onChange={(e) => setDescInput(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div className="buttons">
+                    <button onClick={handleDescSubmit}>Save</button>
+                    <button onClick={() => setShowDescModal(false)}>Exit</button>
+                </div>
+            </div>
+        </>}
+        </div>
+    );
 }
