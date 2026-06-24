@@ -3,11 +3,12 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 import type { User, UserResponse, UserDetails } from '../../types/users'
+import type { Level } from '../../types/levels'
 
 const PAGE_LIMIT = 20;
 const MAX_CACHED_PAGES = 10;
 const MAX_CACHED_USERS = 10;
-const CACHE_TIME = 10 * 60 * 1000; // 10 minutes
+const CACHE_TIME = 10 * 60 * 1000;
 
 type CachedPage = {
     total: number;
@@ -21,22 +22,20 @@ type CachedUserDetails = {
 };
 
 type UsersState = {
-    // page cache: key = offset (0, 20, 40, ...)
     pages: Record<number, CachedPage>;
-    pageOrder: number[]; // LRU order of offsets
-
-    // individual user details cache: key = discord_id
+    pageOrder: number[];
     userDetails: Record<string, CachedUserDetails>;
-    userOrder: string[]; // LRU order of discord_ids
-
+    userOrder: string[];
     loadingPage: boolean;
     loadingUser: boolean;
 
-    // actions
     loadPage: (offset?: number, force?: boolean) => Promise<UserResponse>;
     loadUserDetails: (discord_id: string, force?: boolean) => Promise<UserDetails>;
     getPage: (offset: number) => CachedPage | null;
     getUserDetails: (discord_id: string) => UserDetails | null;
+    updateDescription: (discord_id: string, description: string | null) => Promise<void>;
+    addUserLevel: (discord_id: string, level_id: number, video_url?: string, record?: number) => Promise<void>;
+    removeUserLevel: (discord_id: string, level_id: number) => Promise<void>;
 };
 
 function evictLRU<T>(
@@ -45,7 +44,6 @@ function evictLRU<T>(
     maxSize: number
 ): { cache: Record<string | number, T>; order: (string | number)[] } {
     if (order.length <= maxSize) return { cache, order };
-
     const toEvict = order.slice(0, order.length - maxSize);
     const newCache = { ...cache };
     toEvict.forEach((key) => delete newCache[key]);
@@ -78,39 +76,25 @@ export const useUsers = create<UsersState>()(
 
             loadPage: async (offset = 0, force = false) => {
                 const { getPage, loadingPage } = get();
-                if (loadingPage) return Promise.reject("Already loading");
-
+                if (loadingPage) return Promise.reject('Already loading');
                 const cached = getPage(offset);
                 if (!force && cached) {
                     return { total: cached.total, limit: PAGE_LIMIT, offset, users: cached.users };
                 }
-
                 set({ loadingPage: true });
                 try {
                     const res = await fetch(`${API_URL}/users/?limit=${PAGE_LIMIT}&offset=${offset}`);
-                    if (!res.ok) throw new Error("Failed to fetch users");
-
+                    if (!res.ok) throw new Error('Failed to fetch users');
                     const data: UserResponse = await res.json();
-
                     set((state) => {
-                        const newOrder = [
-                            ...state.pageOrder.filter((o) => o !== offset),
-                            offset,
-                        ];
-
+                        const newOrder = [...state.pageOrder.filter((o) => o !== offset), offset];
                         const { cache: evictedPages, order: evictedOrder } = evictLRU(
                             { ...state.pages, [offset]: { total: data.total, users: data.users, fetchedAt: Date.now() } },
                             newOrder,
                             MAX_CACHED_PAGES
                         );
-
-                        return {
-                            pages: evictedPages as Record<number, CachedPage>,
-                            pageOrder: evictedOrder as number[],
-                            loadingPage: false,
-                        };
+                        return { pages: evictedPages as Record<number, CachedPage>, pageOrder: evictedOrder as number[], loadingPage: false };
                     });
-
                     return data;
                 } catch (err) {
                     set({ loadingPage: false });
@@ -120,42 +104,59 @@ export const useUsers = create<UsersState>()(
 
             loadUserDetails: async (discord_id: string, force = false) => {
                 const { getUserDetails, loadingUser } = get();
-                if (loadingUser) return Promise.reject("Already loading");
-
+                if (loadingUser) return Promise.reject('Already loading');
                 const cached = getUserDetails(discord_id);
                 if (!force && cached) return cached;
-
                 set({ loadingUser: true });
                 try {
                     const res = await fetch(`${API_URL}/users/${discord_id}/details`);
-                    if (!res.ok) throw new Error("Failed to fetch user details");
-
+                    if (!res.ok) throw new Error('Failed to fetch user details');
                     const details: UserDetails = await res.json();
-
                     set((state) => {
-                        const newOrder = [
-                            ...state.userOrder.filter((id) => id !== discord_id),
-                            discord_id,
-                        ];
-
+                        const newOrder = [...state.userOrder.filter((id) => id !== discord_id), discord_id];
                         const { cache: evictedUsers, order: evictedOrder } = evictLRU(
                             { ...state.userDetails, [discord_id]: { details, fetchedAt: Date.now() } },
                             newOrder,
                             MAX_CACHED_USERS
                         );
-
-                        return {
-                            userDetails: evictedUsers as Record<string, CachedUserDetails>,
-                            userOrder: evictedOrder as string[],
-                            loadingUser: false,
-                        };
+                        return { userDetails: evictedUsers as Record<string, CachedUserDetails>, userOrder: evictedOrder as string[], loadingUser: false };
                     });
-
                     return details;
                 } catch (err) {
                     set({ loadingUser: false });
                     throw err;
                 }
+            },
+
+            updateDescription: async (discord_id: string, description: string | null) => {
+                const res = await fetch(`${API_URL}/users/${discord_id}/description`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ description }),
+                });
+                if (!res.ok) throw new Error('Failed to update description');
+                await get().loadUserDetails(discord_id, true);
+            },
+
+            addUserLevel: async (discord_id: string, level_id: number, video_url?: string, record = 100) => {
+                const res = await fetch(`${API_URL}/users/${discord_id}/levels`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ level_id, video_url: video_url || null, record }),
+                });
+                if (!res.ok) throw new Error('Failed to add level');
+                await get().loadUserDetails(discord_id, true);
+            },
+
+            removeUserLevel: async (discord_id: string, level_id: number) => {
+                const res = await fetch(`${API_URL}/users/${discord_id}/levels/${level_id}`, {
+                    method: 'DELETE',
+                    credentials: 'include',
+                });
+                if (!res.ok) throw new Error('Failed to remove level');
+                await get().loadUserDetails(discord_id, true);
             },
         }),
         {

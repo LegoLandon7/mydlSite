@@ -1,14 +1,18 @@
 import './UsersMenu.scss';
 
 import { NavLink, useParams } from 'react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import SearchIcon from '../../assets/icons/search.svg';
+import SiteHeader from '../web/SiteHeader';
 
 import { useUsers } from '../../api/call/users/usersStore';
 import { useAuth } from '../../api/call/auth/auth';
+import { useLevels } from '../../api/call/levels/levelsStore';
+import { useToast } from '../../util/useToast';
 
 import type { User, UserDetails } from '../../api/types/users';
+import type { Level } from '../../api/types/levels';
 
 const PAGE_LIMIT = 20;
 type Tab = 'details' | 'levels' | 'lists';
@@ -18,8 +22,14 @@ export default function UsersMenu() {
     const getPage = useUsers((s) => s.getPage);
     const loadUserDetails = useUsers((s) => s.loadUserDetails);
     const getUserDetails = useUsers((s) => s.getUserDetails);
+    const updateDescription = useUsers((s) => s.updateDescription);
+    const addUserLevel = useUsers((s) => s.addUserLevel);
+    const removeUserLevel = useUsers((s) => s.removeUserLevel);
     const loadingPage = useUsers((s) => s.loadingPage);
     const loadingUser = useUsers((s) => s.loadingUser);
+
+    const levels = useLevels((s) => s.levels);
+    const loadLevels = useLevels((s) => s.loadLevels);
 
     const [users, setUsers] = useState<User[]>([]);
     const [total, setTotal] = useState(0);
@@ -28,20 +38,26 @@ export default function UsersMenu() {
     const [searchText, setSearchText] = useState('');
     const [tab, setTab] = useState<Tab>('details');
 
+    const [showDescModal, setShowDescModal] = useState(false);
+    const [descInput, setDescInput] = useState('');
+
+    const [showAddLevelModal, setShowAddLevelModal] = useState(false);
+    const [levelSearch, setLevelSearch] = useState('');
+    const [selectedLevel, setSelectedLevel] = useState<Level | null>(null);
+    const [videoUrl, setVideoUrl] = useState('');
+    const [record, setRecord] = useState(100);
+
     const { id } = useParams();
     const offset = page * PAGE_LIMIT;
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    const { user } = useAuth();
+    const { showToast } = useToast();
 
     useEffect(() => {
         const cached = getPage(offset);
-        if (cached) {
-            setUsers(cached.users);
-            setTotal(cached.total);
-            return;
-        }
-        loadPage(offset).then((data) => {
-            setUsers(data.users);
-            setTotal(data.total);
-        }).catch(() => {});
+        if (cached) { setUsers(cached.users); setTotal(cached.total); return; }
+        loadPage(offset).then((data) => { setUsers(data.users); setTotal(data.total); }).catch(() => {});
     }, [offset, loadPage, getPage]);
 
     useEffect(() => {
@@ -51,11 +67,12 @@ export default function UsersMenu() {
         loadUserDetails(id).then(setDetails).catch(() => setDetails(null));
     }, [id, loadUserDetails, getUserDetails]);
 
+    useEffect(() => {
+        if (showAddLevelModal) loadLevels();
+    }, [showAddLevelModal, loadLevels]);
+
     const handleRefreshMenu = () => {
-        loadPage(offset, true).then((data) => {
-            setUsers(data.users);
-            setTotal(data.total);
-        }).catch(() => {});
+        loadPage(offset, true).then((data) => { setUsers(data.users); setTotal(data.total); }).catch(() => {});
     };
 
     const handleRefreshUser = () => {
@@ -63,39 +80,168 @@ export default function UsersMenu() {
         loadUserDetails(id, true).then(setDetails).catch(() => setDetails(null));
     };
 
-    const totalPages = Math.ceil(total / PAGE_LIMIT);
-    const query = searchText.toLowerCase();
-
-    const filteredUsers = users.filter((u) =>
-        u.username.toLowerCase().includes(query) ||
-        u.discord_id.includes(query)
-    );
-
-    const { user } = useAuth();
-    const [showDescModal, setShowDescModal] = useState(false);
-    const [descInput, setDescInput] = useState('');
-
-    const canEdit = user && details && (user.discord_id === details.user.discord_id || user.admin);
-
     const handleDescSubmit = async () => {
         if (!id) return;
         try {
-            const res = await fetch(`${API_URL}/users/${id}/description`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ description: descInput }),
-            });
-            if (!res.ok) throw new Error();
-            await loadUserDetails(id, true).then(setDetails);
+            await updateDescription(id, descInput || null);
+            const fresh = getUserDetails(id);
+            if (fresh) setDetails(fresh);
             setShowDescModal(false);
+            showToast('Description updated', 'success');
         } catch {
-            // handle error
+            showToast('Failed to update description', 'error');
         }
     };
 
+    const handleAddLevel = async () => {
+        if (!id || !selectedLevel) { showToast('Select a level', 'error'); return; }
+        try {
+            await addUserLevel(id, selectedLevel.level_id, videoUrl || undefined, record);
+            const fresh = getUserDetails(id);
+            if (fresh) setDetails(fresh);
+            setShowAddLevelModal(false);
+            setSelectedLevel(null);
+            setVideoUrl('');
+            setRecord(100);
+            setLevelSearch('');
+            showToast('Level added', 'success');
+        } catch {
+            showToast('Failed to add level', 'error');
+        }
+    };
+
+    const handleRemoveLevel = async (level_id: number) => {
+        if (!id) return;
+        try {
+            await removeUserLevel(id, level_id);
+            const fresh = getUserDetails(id);
+            if (fresh) setDetails(fresh);
+            showToast('Level removed', 'success');
+        } catch {
+            showToast('Failed to remove level', 'error');
+        }
+    };
+
+    const totalPages = Math.ceil(total / PAGE_LIMIT);
+    const query = searchText.toLowerCase();
+    const filteredUsers = users.filter((u) =>
+        u.username.toLowerCase().includes(query) || u.discord_id.includes(query)
+    );
+
+    const canEdit = user && details && (user.discord_id === details.user.discord_id || details.admin);
+
+    const userLevelIds = new Set((details?.levels ?? []).map((l) => l.level_id));
+    const filteredLevels = levels.filter((l) => {
+        const q = levelSearch.toLowerCase();
+        return (
+            l.name.toLowerCase().includes(q) ||
+            l.position.toString().includes(q) ||
+            l.level_id.toString().includes(q)
+        );
+    });
+
     return (
-        <div className="viewport">
+        <div className="viewport" ref={scrollRef}>
+            {showDescModal && <>
+                <div className="modal-background" onClick={() => setShowDescModal(false)} />
+                <div className="modal-viewport">
+                    <SiteHeader head="Edit Description" subhead="shown on your public profile" />
+                    <div className="info">
+                        <div className="section big">
+                            <div className="entry">
+                                <div className="entry-detail">
+                                    <h3>description</h3>
+                                    <p> — up to 500 characters</p>
+                                </div>
+                                <textarea
+                                    maxLength={500}
+                                    value={descInput}
+                                    onChange={(e) => setDescInput(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="buttons">
+                        <button onClick={handleDescSubmit}>Save</button>
+                        <button onClick={() => setShowDescModal(false)}>Cancel</button>
+                    </div>
+                </div>
+            </>}
+
+            {showAddLevelModal && <>
+                <div className="modal-background" onClick={() => setShowAddLevelModal(false)} />
+                <div className="modal-viewport">
+                    <SiteHeader head="Add Level" subhead="add a completed level to this profile" />
+                    <div className="info">
+                        <div className="section small">
+                            <div className="entry">
+                                <div className="entry-detail">
+                                    <h3>search levels</h3>
+                                </div>
+                                <input
+                                    placeholder="name, position, or id..."
+                                    value={levelSearch}
+                                    onChange={(e) => setLevelSearch(e.target.value)}
+                                />
+                            </div>
+                            <div className="level-picker">
+                                {filteredLevels.slice(0, 50).map((l) => (
+                                    <button
+                                        key={l.level_id}
+                                        className={`level-pick-item${selectedLevel?.level_id === l.level_id ? ' selected' : ''}${userLevelIds.has(l.level_id) ? ' already-added' : ''}`}
+                                        onClick={() => setSelectedLevel(l)}
+                                        disabled={userLevelIds.has(l.level_id)}
+                                    >
+                                        <span className="pos">#{l.position}</span>
+                                        <span className="name">{l.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="section big">
+                            <div className="entry">
+                                <div className="entry-detail">
+                                    <h3>selected level</h3>
+                                </div>
+                                <input
+                                    readOnly
+                                    value={selectedLevel ? `#${selectedLevel.position} — ${selectedLevel.name}` : ''}
+                                    placeholder="none selected"
+                                />
+                            </div>
+                            <div className="entry">
+                                <div className="entry-detail">
+                                    <h3>video url</h3>
+                                    <p> — optional completion proof</p>
+                                </div>
+                                <input
+                                    value={videoUrl}
+                                    onChange={(e) => setVideoUrl(e.target.value)}
+                                    placeholder="https://youtube.com/..."
+                                />
+                            </div>
+                            <div className="entry">
+                                <div className="entry-detail">
+                                    <h3>record</h3>
+                                    <p> — percent (1–100)</p>
+                                </div>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={100}
+                                    value={record}
+                                    onChange={(e) => setRecord(Math.min(100, Math.max(1, Number(e.target.value))))}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="buttons">
+                        <button onClick={handleAddLevel}>Add Level</button>
+                        <button onClick={() => { setShowAddLevelModal(false); setSelectedLevel(null); setVideoUrl(''); setRecord(100); setLevelSearch(''); }}>Cancel</button>
+                    </div>
+                </div>
+            </>}
+
             <div className="menu">
                 <div className="search">
                     <img src={SearchIcon} alt="search" />
@@ -109,16 +255,15 @@ export default function UsersMenu() {
                 {loadingPage && users.length === 0 ? (
                     <div className="menu-loading">Loading...</div>
                 ) : (
-                    filteredUsers.map((user) => (
+                    filteredUsers.map((u) => (
                         <NavLink
-                            key={user.discord_id}
-                            to={`/users/${user.discord_id}`}
+                            key={u.discord_id}
+                            to={`/users/${u.discord_id}`}
                             className="menu-item"
+                            onClick={() => scrollRef.current?.scrollTo({ left: 0, behavior: 'smooth' })}
                         >
-                            {user.avatar_url && (
-                                <img className="menu-avatar" src={user.avatar_url} alt={user.username} />
-                            )}
-                            <h2>{user.username}</h2>
+                            {u.avatar_url && <img className="menu-avatar" src={u.avatar_url} alt={u.username} />}
+                            <h2>{u.username}</h2>
                         </NavLink>
                     ))
                 )}
@@ -137,17 +282,11 @@ export default function UsersMenu() {
 
             {loadingUser && !details ? (
                 <div className="page">
-                    <div className="error">
-                        <h1>⏳ Loading</h1>
-                        <h3>Fetching user, please wait...</h3>
-                    </div>
+                    <div className="error"><h1>⏳ Loading</h1><h3>Fetching user, please wait...</h3></div>
                 </div>
             ) : !id ? (
                 <div className="page">
-                    <div className="error">
-                        <h1>👤 No user selected</h1>
-                        <h3>Select a user from the menu</h3>
-                    </div>
+                    <div className="error"><h1>👤 No user selected</h1><h3>Select a user from the menu</h3></div>
                 </div>
             ) : details ? (
                 <div className="page">
@@ -163,7 +302,6 @@ export default function UsersMenu() {
                     {tab === 'details' && (
                         <>
                             <h1>{details.user.username}</h1>
-
                             <div className="info">
                                 <div className="detail">
                                     <h1>Username:</h1>
@@ -180,47 +318,50 @@ export default function UsersMenu() {
                                     </div>
                                 )}
                             </div>
-
-                            {details.user.description ? (
-                                <div className="info">
+                            <div className="info desc-info">
+                                {details.user.description ? (
                                     <div className="detail">
                                         <h2>{details.user.description}</h2>
                                     </div>
-                                    {canEdit && (
-                                        <button onClick={() => { setDescInput(details.user.description ?? ''); setShowDescModal(true); }}>
-                                            Edit Description
-                                        </button>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="info">
-                                    <div className="detail">
-                                        <h3>no description provided...</h3>
+                                ) : (
+                                    <div className="detail muted">
+                                        <h3>no description yet</h3>
                                     </div>
-                                    {canEdit && (
-                                        <button onClick={() => { setDescInput(''); setShowDescModal(true); }}>
-                                            Add Description
-                                        </button>
-                                    )}
-                                </div>
-                            )}
+                                )}
+                                {canEdit && (
+                                    <button
+                                        className="edit-desc-btn"
+                                        onClick={() => { setDescInput(details.user.description ?? ''); setShowDescModal(true); }}
+                                    >
+                                        ✎ Edit Description
+                                    </button>
+                                )}
+                            </div>
                         </>
                     )}
 
                     {tab === 'levels' && (
                         <>
-                            <h1>Levels</h1>
+                            <div className="tab-header">
+                                <h1>Levels</h1>
+                                {canEdit && (
+                                    <button className="add-btn" onClick={() => setShowAddLevelModal(true)}>+ Add Level</button>
+                                )}
+                            </div>
                             {details.levels && details.levels.length > 0 ? (
                                 <div className="info">
                                     {details.levels.map((level) => (
-                                        <div className="detail" key={level.level_id}>
+                                        <div className="detail level-row" key={level.level_id}>
                                             <h1>#{level.position}</h1>
                                             <h2>{level.name}</h2>
+                                            {canEdit && (
+                                                <button className="remove-btn" onClick={() => handleRemoveLevel(level.level_id)}>✕</button>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="error"><h3>No levels found</h3></div>
+                                <div className="error"><h3>No levels added yet</h3></div>
                             )}
                         </>
                     )}
@@ -244,37 +385,9 @@ export default function UsersMenu() {
                 </div>
             ) : (
                 <div className="page">
-                    <div className="error">
-                        <h1>⚠️ User not found</h1>
-                        <h3>Check if the ID is correct</h3>
-                    </div>
+                    <div className="error"><h1>⚠️ User not found</h1><h3>Check if the ID is correct</h3></div>
                 </div>
             )}
-
-            {showDescModal && <>
-            <div className="modal-background" onClick={() => setShowDescModal(false)}></div>
-            <div className="modal-viewport">
-                <div className="info">
-                    <div className="section big">
-                        <div className="entry">
-                            <div className="entry-detail">
-                                <h3>description</h3>
-                                <p> - shown on your profile</p>
-                            </div>
-                            <textarea
-                                maxLength={500}
-                                value={descInput}
-                                onChange={(e) => setDescInput(e.target.value)}
-                            />
-                        </div>
-                    </div>
-                </div>
-                <div className="buttons">
-                    <button onClick={handleDescSubmit}>Save</button>
-                    <button onClick={() => setShowDescModal(false)}>Exit</button>
-                </div>
-            </div>
-        </>}
         </div>
     );
 }
