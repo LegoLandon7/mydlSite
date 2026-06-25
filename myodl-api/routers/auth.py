@@ -73,7 +73,7 @@ async def callback(request: Request, code: str, state: str | None = "/"):
         key="session",
         value=session_token,
         httponly=True,
-        secure=False,  # false for http / local | true for https / public     
+        secure=True,  # false for http / local | true for https / public     
         samesite="lax",
         max_age=SESSION_EXPIRE_MINUTES * 60,
     )
