@@ -1,0 +1,70 @@
+@use '../../index.scss' as *;
+
+.edit-level-fields {
+    display: flex;
+    flex-direction: column;
+    gap: $space-md;
+    flex: 1;
+
+    .field {
+        display: flex;
+        flex-direction: column;
+        gap: $space-xs;
+
+        label {
+            font-size: $font-sm;
+            color: $text-secondary;
+            font-weight: $weight-medium;
+
+            .hint {
+                color: $text-muted;
+                font-weight: $weight-regular;
+                margin-left: $space-xs;
+            }
+        }
+
+        input {
+            background: $background-strong;
+            border: 2px solid $border-strong;
+            border-radius: $radius-sm;
+            color: $text-primary;
+            font-size: $font-md;
+            padding: $space-xs $space-sm;
+            width: 100%;
+            max-width: 480px;
+
+            &:focus { outline: none; background: $background-active; }
+        }
+    }
+}
+
+.modal-buttons {
+    display: flex;
+    gap: $space-md;
+    padding-top: $space-sm;
+
+    button {
+        flex: 1;
+        height: 48px;
+        font-size: $font-md;
+        border-radius: $radius-md;
+        border: 2px solid $border-strong;
+        background: $background-strong;
+        color: $text-primary;
+        cursor: pointer;
+        transition: background 0.2s ease;
+
+        &:hover { background: $background-hover; }
+
+        &.btn-primary {
+            border-color: $accent-primary;
+            color: $accent-primary;
+
+            &:hover { background: rgba($accent-primary, 0.12); }
+        }
+    }
+
+    @media (max-width: $mobile-breakpoint) {
+        flex-direction: column;
+    }
+}

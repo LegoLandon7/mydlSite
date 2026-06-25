@@ -32,9 +32,14 @@ class UserResponse(BaseModel):
     offset: int
     users: list[User]
 
+class UserLevelEntry(BaseModel):
+    level: Level
+    video_url: str | None = None
+    record: int = 100
+
 class UserLevels(BaseModel):
     user: User
-    levels: list[Level]
+    levels: list[UserLevelEntry]
 
 class UserRecord(BaseModel):
     level: Level
@@ -59,7 +64,7 @@ class UserAdmins(BaseModel):
 
 class UserDetails(BaseModel):
     user: User
-    levels: list[Level] | None = None
+    levels: list[UserLevelEntry] | None = None
     records: list[UserRecord] | None = None
     lists: list[List] | None = None
     admin: bool
@@ -91,3 +96,12 @@ class ListRecords(BaseModel):
 
 class UpdateDescription(BaseModel):
     description: str | None = None
+
+class AddUserLevel(BaseModel):
+    level_id: int
+    video_url: str | None = None
+    record: int = 100
+
+class UpdateUserLevel(BaseModel):
+    video_url: str | None = None
+    record: int = 100

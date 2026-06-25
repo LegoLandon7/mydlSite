@@ -1,0 +1,22 @@
+@use '../../index.scss' as *;
+
+.icon-btn {
+    background: $background-strong;
+    border: 2px solid $border-strong;
+    color: $text-primary;
+    font-size: $font-lg;
+    padding: $space-xs $space-sm;
+    cursor: pointer;
+    border-radius: $radius-sm;
+    transition: background 0.2s ease;
+    line-height: 1;
+
+    &:hover { background: $background-hover; }
+
+    &.accent {
+        border-color: $accent-primary;
+        color: $accent-primary;
+
+        &:hover { background: rgba($accent-primary, 0.12); }
+    }
+}

@@ -1,0 +1,27 @@
+@use '../../index.scss' as *;
+
+.pagination {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: $space-xs;
+
+    button {
+        background: $background-strong;
+        border: 2px solid $border-strong;
+        color: $text-primary;
+        font-size: $font-md;
+        padding: $space-xs $space-sm;
+        cursor: pointer;
+        border-radius: $radius-sm;
+        transition: background 0.2s ease;
+
+        &:hover:not(:disabled) { background: $background-hover; }
+        &:disabled { opacity: 0.4; cursor: default; }
+    }
+
+    span {
+        font-size: $font-md;
+        color: $text-secondary;
+    }
+}

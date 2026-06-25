@@ -1,41 +1,54 @@
 import './LevelCard.scss';
-
-import placeHolderImage from '../assets/images/placeholder.png';
-import playImage from '../assets/images/play.svg';
+import placeholderImage from '../../assets/images/placeholder.png';
 
 type LevelCardProps = {
     placement?: number;
-    aredlPlacement?: number;
     title?: string;
     imageUrl?: string;
     videoUrl?: string;
+    record?: number;
     infoUrl?: string;
+    onEdit?: () => void;
+    onRemove?: () => void;
 };
 
 export default function LevelCard({
     placement = 0,
-    aredlPlacement = undefined,
-    title = "Unknown Level",
-    imageUrl = placeHolderImage,
-    videoUrl = undefined,
-    infoUrl = undefined
+    title = 'Unknown Level',
+    imageUrl = placeholderImage,
+    videoUrl,
+    record,
+    infoUrl,
+    onEdit,
+    onRemove,
 }: LevelCardProps) {
     return (
-        <a className="level-card" style={{ backgroundImage: `url(${imageUrl})` }} href={infoUrl}>
-            <div className="left">
-                <h1>{`#${placement}`}</h1>
-
-                <div className="level-info">
-                    <h1>{title}</h1>
-                    {aredlPlacement && <p>{`aredl #${aredlPlacement}`}</p>}
+        <div className="level-card" style={{ backgroundImage: `url(${imageUrl})` }}>
+            <a className="level-card-link" href={infoUrl}>
+                <div className="lc-left">
+                    <span className="lc-placement">#{placement}</span>
+                    <div className="lc-info">
+                        <span className="lc-title">{title}</span>
+                        {record !== undefined && (
+                            <span className="lc-record">{record}%</span>
+                        )}
+                    </div>
                 </div>
+            </a>
+
+            <div className="lc-right">
+                {videoUrl && (
+                    <a className="lc-video-btn" href={videoUrl} target="_blank" rel="noopener noreferrer" title="Watch video">
+                        ▶
+                    </a>
+                )}
+                {onEdit && (
+                    <button className="lc-edit-btn" onClick={onEdit} title="Edit">✎</button>
+                )}
+                {onRemove && (
+                    <button className="lc-remove-btn" onClick={onRemove} title="Remove">✕</button>
+                )}
             </div>
-            
-            <div className="right">
-                {videoUrl && <a href={videoUrl} target="_blank" rel="noopener noreferrer">
-                    <img src={playImage} alt="Play Video" />
-                </a>}
-            </div>
-        </a>
+        </div>
     );
 }

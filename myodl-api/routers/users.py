@@ -4,6 +4,7 @@ from fastapi import APIRouter, Request, HTTPException, Query, Depends
 from database.db import DB
 from util.limiter import limiter
 from core.auth import get_current_user
+from util.validators import video_url_PREFIXES
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -17,32 +18,25 @@ async def list_users(request: Request,
     search: str | None = None
 ):
     search_value = f"%{search.lower()}%" if search else None
-
     async with aiosqlite.connect(DB) as db:
         db.row_factory = aiosqlite.Row
-
         if search:
             query = "SELECT * FROM users WHERE lower(username) LIKE ? OR discord_id LIKE ? ORDER BY username LIMIT ? OFFSET ?"
             parameters = (search_value, search_value, limit, offset)
         else:
             query = "SELECT * FROM users ORDER BY username LIMIT ? OFFSET ?"
             parameters = (limit, offset)
-
         async with db.execute(query, parameters) as c:
             rows = await c.fetchall()
-
         users = [User.model_validate(dict(r)) for r in rows]
-
         if search:
             count_query = "SELECT COUNT(*) as count FROM users WHERE lower(username) LIKE ? OR discord_id = ?"
             count_parameters = (search_value, search_value)
         else:
             count_query = "SELECT COUNT(*) as count FROM users"
             count_parameters = ()
-
         async with db.execute(count_query, count_parameters) as c:
             total = (await c.fetchone())["count"]
-
     return UserResponse(total=total, limit=limit, offset=offset, users=users)
 
 
@@ -51,19 +45,15 @@ async def list_users(request: Request,
 async def get_admins(request: Request):
     async with aiosqlite.connect(DB) as db:
         db.row_factory = aiosqlite.Row
-
         async with db.execute(
             "SELECT u.*, o.owner FROM site_admins o JOIN users u ON o.discord_id = u.discord_id ORDER BY u.username",
         ) as c:
             rows = await c.fetchall()
-
         if not rows:
             raise HTTPException(404, "No users found")
-
     admins = [UserAdmin(
         user=User(discord_id=row["discord_id"], username=row["username"], avatar_url=row["avatar_url"], description=row["description"]),
         admin=True, owner=row["owner"]) for row in rows]
-
     return UserAdmins(count=len(admins), admins=admins)
 
 
@@ -72,16 +62,12 @@ async def get_admins(request: Request):
 async def get_user_admin(request: Request, discord_id: str):
     async with aiosqlite.connect(DB) as db:
         db.row_factory = aiosqlite.Row
-
         async with db.execute("SELECT * FROM users WHERE discord_id = ?", (discord_id,)) as c:
             user = await c.fetchone()
-
         if not user:
             raise HTTPException(404, "User not found")
-
         async with db.execute("SELECT * FROM site_admins WHERE discord_id = ?", (discord_id,)) as c:
             admin = await c.fetchone()
-
     user_obj = User.model_validate(dict(user))
     return UserAdmin(user=user_obj, admin=admin is not None, owner=admin["owner"] if admin else False)
 
@@ -91,13 +77,10 @@ async def get_user_admin(request: Request, discord_id: str):
 async def get_user(request: Request, discord_id: str):
     async with aiosqlite.connect(DB) as db:
         db.row_factory = aiosqlite.Row
-
         async with db.execute("SELECT * FROM users WHERE discord_id = ?", (discord_id,)) as c:
             user = await c.fetchone()
-
     if not user:
         raise HTTPException(404, "User not found")
-
     return User.model_validate(dict(user))
 
 
@@ -106,20 +89,23 @@ async def get_user(request: Request, discord_id: str):
 async def get_user_levels(request: Request, discord_id: str):
     async with aiosqlite.connect(DB) as db:
         db.row_factory = aiosqlite.Row
-
         async with db.execute(
-            "SELECT l.* FROM user_levels u JOIN levels l ON u.level_id = l.level_id WHERE u.discord_id = ? ORDER BY l.position",
+            "SELECT l.*, ul.video_url, ul.record FROM user_levels ul JOIN levels l ON ul.level_id = l.level_id WHERE ul.discord_id = ? ORDER BY l.position",
             (discord_id,),
         ) as c:
-            levels = await c.fetchall()
-
+            rows = await c.fetchall()
         async with db.execute("SELECT * FROM users WHERE discord_id = ?", (discord_id,)) as c:
             user = await c.fetchone()
-
     if not user:
         raise HTTPException(404, "User not found")
-
-    return UserLevels(user=User.model_validate(dict(user)), levels=[Level.model_validate(dict(r)) for r in levels])
+    return UserLevels(
+        user=User.model_validate(dict(user)),
+        levels=[UserLevelEntry(
+            level=Level.model_validate(dict(r)),
+            video_url=r["video_url"],
+            record=r["record"]
+        ) for r in rows]
+    )
 
 
 @router.get("/{discord_id}/records", response_model=UserRecords)
@@ -127,19 +113,15 @@ async def get_user_levels(request: Request, discord_id: str):
 async def get_user_records(request: Request, discord_id: str):
     async with aiosqlite.connect(DB) as db:
         db.row_factory = aiosqlite.Row
-
         async with db.execute("SELECT * FROM users WHERE discord_id = ?", (discord_id,)) as c:
             user = await c.fetchone()
-
         if not user:
             raise HTTPException(404, "User not found")
-
         async with db.execute(
             "SELECT lr.record, l.* FROM user_records lr JOIN levels l ON l.level_id = lr.level_id WHERE lr.discord_id = ? ORDER BY l.position",
             (discord_id,),
         ) as c:
             rows = await c.fetchall()
-
     records = [UserRecord(level=Level.model_validate(dict(row)), record=row["record"]) for row in rows]
     return UserRecords(user=User.model_validate(dict(user)), records=records)
 
@@ -149,16 +131,12 @@ async def get_user_records(request: Request, discord_id: str):
 async def get_user_lists(request: Request, discord_id: str):
     async with aiosqlite.connect(DB) as db:
         db.row_factory = aiosqlite.Row
-
         async with db.execute("SELECT * FROM users WHERE discord_id = ?", (discord_id,)) as c:
             user = await c.fetchone()
-
         if not user:
             raise HTTPException(404, "User not found")
-
         async with db.execute("SELECT * FROM lists WHERE owner_discord_id = ? ORDER BY name", (discord_id,)) as c:
             lists = await c.fetchall()
-
     return UserLists(user=User.model_validate(dict(user)), lists=[List.model_validate(dict(r)) for r in lists])
 
 
@@ -167,33 +145,31 @@ async def get_user_lists(request: Request, discord_id: str):
 async def get_user_details(request: Request, discord_id: str):
     async with aiosqlite.connect(DB) as db:
         db.row_factory = aiosqlite.Row
-
         async with db.execute("SELECT * FROM users WHERE discord_id = ?", (discord_id,)) as c:
             user = await c.fetchone()
         if not user:
             raise HTTPException(404, "User not found")
-
         async with db.execute(
-            "SELECT l.* FROM user_levels u JOIN levels l ON u.level_id = l.level_id WHERE u.discord_id = ? ORDER BY l.position",
+            "SELECT l.*, ul.video_url, ul.record FROM user_levels ul JOIN levels l ON ul.level_id = l.level_id WHERE ul.discord_id = ? ORDER BY l.position",
             (discord_id,),
         ) as c:
             levels = await c.fetchall()
-
         async with db.execute(
             "SELECT lr.record AS record, l.* FROM user_records lr JOIN levels l ON l.level_id = lr.level_id WHERE lr.discord_id = ? ORDER BY l.position",
             (discord_id,),
         ) as c:
             records = await c.fetchall()
-
         async with db.execute("SELECT * FROM lists WHERE owner_discord_id = ? ORDER BY name", (discord_id,)) as c:
             lists = await c.fetchall()
-
         async with db.execute("SELECT * FROM site_admins WHERE discord_id = ?", (discord_id,)) as c:
             admin = await c.fetchone()
-
     return UserDetails(
         user=User.model_validate(dict(user)),
-        levels=[Level.model_validate(dict(r)) for r in levels],
+        levels=[UserLevelEntry(
+            level=Level.model_validate(dict(r)),
+            video_url=r["video_url"],
+            record=r["record"]
+        ) for r in levels],
         records=[UserRecord(level=Level.model_validate(dict(r)), record=r["record"]) for r in records],
         lists=[List.model_validate(dict(r)) for r in lists],
         admin=admin is not None,
@@ -206,20 +182,86 @@ async def get_user_details(request: Request, discord_id: str):
 async def update_description(request: Request, discord_id: str, body: UpdateDescription, current_user: User = Depends(get_current_user)):
     async with aiosqlite.connect(DB) as db:
         db.row_factory = aiosqlite.Row
-
         async with db.execute("SELECT * FROM site_admins WHERE discord_id = ?", (current_user.discord_id,)) as c:
             admin = await c.fetchone()
-
         if current_user.discord_id != discord_id and not admin:
             raise HTTPException(403, "Forbidden")
-
         async with db.execute("SELECT * FROM users WHERE discord_id = ?", (discord_id,)) as c:
             user = await c.fetchone()
-
         if not user:
             raise HTTPException(404, "User not found")
-
         await db.execute("UPDATE users SET description = ? WHERE discord_id = ?", (body.description, discord_id))
         await db.commit()
+    return {"ok": True}
 
+
+@router.post("/{discord_id}/levels")
+@limiter.limit("20/minute")
+async def add_user_level(request: Request, discord_id: str, body: AddUserLevel, current_user: User = Depends(get_current_user)):
+    async with aiosqlite.connect(DB) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM site_admins WHERE discord_id = ?", (current_user.discord_id,)) as c:
+            admin = await c.fetchone()
+        if current_user.discord_id != discord_id and not admin:
+            raise HTTPException(403, "Forbidden")
+        async with db.execute("SELECT * FROM users WHERE discord_id = ?", (discord_id,)) as c:
+            user = await c.fetchone()
+        if not user:
+            raise HTTPException(404, "User not found")
+        async with db.execute("SELECT * FROM levels WHERE level_id = ?", (body.level_id,)) as c:
+            level = await c.fetchone()
+        if not level:
+            raise HTTPException(404, "Level not found")
+        if body.video_url and not any(body.video_url.startswith(p) for p in video_url_PREFIXES):
+            raise HTTPException(400, "Invalid video URL")
+        async with db.execute("SELECT 1 FROM user_levels WHERE discord_id = ? AND level_id = ?", (discord_id, body.level_id)) as c:
+            existing = await c.fetchone()
+        if existing:
+            raise HTTPException(409, "Level already added")
+        await db.execute(
+            "INSERT INTO user_levels (discord_id, level_id, video_url, record) VALUES (?, ?, ?, ?)",
+            (discord_id, body.level_id, body.video_url, body.record)
+        )
+        await db.commit()
+    return {"ok": True}
+
+
+@router.patch("/{discord_id}/levels/{level_id}")
+@limiter.limit("20/minute")
+async def update_user_level(request: Request, discord_id: str, level_id: int, body: UpdateUserLevel, current_user: User = Depends(get_current_user)):
+    async with aiosqlite.connect(DB) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM site_admins WHERE discord_id = ?", (current_user.discord_id,)) as c:
+            admin = await c.fetchone()
+        if current_user.discord_id != discord_id and not admin:
+            raise HTTPException(403, "Forbidden")
+        async with db.execute("SELECT 1 FROM user_levels WHERE discord_id = ? AND level_id = ?", (discord_id, level_id)) as c:
+            existing = await c.fetchone()
+        if not existing:
+            raise HTTPException(404, "Level not found on user")
+        if body.video_url and not any(body.video_url.startswith(p) for p in video_url_PREFIXES):
+            raise HTTPException(400, "Invalid video URL")
+        await db.execute(
+            "UPDATE user_levels SET video_url = ?, record = ? WHERE discord_id = ? AND level_id = ?",
+            (body.video_url, body.record, discord_id, level_id)
+        )
+        await db.commit()
+    return {"ok": True}
+
+
+@router.delete("/{discord_id}/levels/{level_id}")
+@limiter.limit("20/minute")
+async def remove_user_level(request: Request, discord_id: str, level_id: int, current_user: User = Depends(get_current_user)):
+    async with aiosqlite.connect(DB) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM site_admins WHERE discord_id = ?", (current_user.discord_id,)) as c:
+            admin = await c.fetchone()
+        if current_user.discord_id != discord_id and not admin:
+            raise HTTPException(403, "Forbidden")
+        async with db.execute("SELECT 1 FROM user_levels WHERE discord_id = ? AND level_id = ?", (discord_id, level_id)) as c:
+            existing = await c.fetchone()
+        if not existing:
+            raise HTTPException(404, "Level not found on user")
+        await db.execute("DELETE FROM user_levels WHERE discord_id = ? AND level_id = ?", (discord_id, level_id))
+        await db.commit()
     return {"ok": True}

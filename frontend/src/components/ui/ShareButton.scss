@@ -1,0 +1,18 @@
+@use '../../index.scss' as *;
+
+.share-btn {
+    background: $background-strong;
+    border: 2px solid $border-color;
+    border-radius: $radius-sm;
+    color: $text-muted;
+    font-size: $font-sm;
+    padding: $space-xs $space-sm;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+
+    &:hover {
+        color: $text-primary;
+        border-color: $accent-primary;
+        background: rgba($accent-primary, 0.08);
+    }
+}

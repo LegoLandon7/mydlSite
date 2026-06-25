@@ -1,0 +1,58 @@
+@use '../../index.scss' as *;
+
+.split-layout {
+    display: flex;
+    width: 100%;
+    gap: $space-md;
+    height: 85vh;
+}
+
+.split-menu {
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+    min-width: 260px;
+    flex-shrink: 0;
+    height: 100%;
+    overflow: hidden;
+
+    background: $background-subtle;
+    border: 3px solid $border-strong;
+    border-radius: $radius-sm;
+}
+
+.split-page {
+    flex: 1;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    background: $background-subtle;
+    border: 3px solid $border-strong;
+    border-radius: $radius-sm;
+    padding: $space-md;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-lg;
+}
+
+@media (max-width: $mobile-breakpoint) {
+    .split-layout {
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+        gap: 7.5vw;
+        padding-inline: 7.5vw;
+        height: 70vh;
+    }
+
+    .split-menu,
+    .split-page {
+        flex: 0 0 85vw;
+        height: 100%;
+        scroll-snap-align: center;
+    }
+}

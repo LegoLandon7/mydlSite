@@ -1,0 +1,30 @@
+@use '../../index.scss' as *;
+
+.menu-search {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: $space-xs;
+    width: 100%;
+    padding: $space-xs;
+    border-bottom: 2px solid $border-subtle;
+    flex-shrink: 0;
+
+    img {
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+        filter: invert(1) sepia(0.6) saturate(6) hue-rotate(255deg) brightness(0.65);
+    }
+
+    input {
+        flex: 1;
+        background: $background-strong;
+        border: none;
+        color: $text-secondary;
+        font-size: $font-md;
+        padding: $space-sm;
+
+        &:focus { outline: none; }
+    }
+}

@@ -1,0 +1,89 @@
+@use '../../index.scss' as *;
+
+.add-level-body {
+    display: flex;
+    flex: 1;
+    gap: $space-md;
+    min-height: 0;
+
+    @media (max-width: $mobile-breakpoint) {
+        flex-direction: column;
+    }
+}
+
+.level-picker-col {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    border: 2px solid $border-strong;
+    border-radius: $radius-sm;
+    overflow: hidden;
+}
+
+.level-picker-list {
+    flex: 1;
+    overflow-y: auto;
+
+    .lp-item {
+        display: flex;
+        align-items: center;
+        gap: $space-sm;
+        width: 100%;
+        padding: $space-xs $space-sm;
+        border: none;
+        border-bottom: 1px solid $border-subtle;
+        background: none;
+        color: $text-secondary;
+        font-size: $font-md;
+        cursor: pointer;
+        text-align: left;
+        transition: background 0.1s ease;
+        border-radius: 0;
+
+        .lp-pos { color: $text-muted; min-width: 48px; font-size: $font-sm; }
+        .lp-name { flex: 1; }
+
+        &:hover:not(:disabled) { background: $background-hover; }
+        &.selected { background: $background-active; color: $text-primary; }
+        &.added { opacity: 0.4; cursor: not-allowed; }
+    }
+}
+
+.level-form-col {
+    display: flex;
+    flex-direction: column;
+    gap: $space-md;
+    flex: 1;
+
+    .field {
+        display: flex;
+        flex-direction: column;
+        gap: $space-xs;
+
+        label {
+            font-size: $font-sm;
+            color: $text-secondary;
+            font-weight: $weight-medium;
+
+            .hint {
+                color: $text-muted;
+                font-weight: $weight-regular;
+                margin-left: $space-xs;
+            }
+        }
+
+        input {
+            background: $background-strong;
+            border: 2px solid $border-strong;
+            border-radius: $radius-sm;
+            color: $text-primary;
+            font-size: $font-md;
+            padding: $space-xs $space-sm;
+            width: 100%;
+
+            &:focus { outline: none; background: $background-active; }
+            &[readonly] { color: $text-muted; }
+        }
+    }
+}

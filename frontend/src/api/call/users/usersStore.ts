@@ -1,25 +1,16 @@
-import { API_URL } from '../../global'
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { API_URL } from '../../global';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-import type { User, UserResponse, UserDetails } from '../../types/users'
-import type { Level } from '../../types/levels'
+import type { User, UserResponse, UserDetails } from '../../types/users';
 
 const PAGE_LIMIT = 20;
 const MAX_CACHED_PAGES = 10;
 const MAX_CACHED_USERS = 10;
 const CACHE_TIME = 10 * 60 * 1000;
 
-type CachedPage = {
-    total: number;
-    users: User[];
-    fetchedAt: number;
-};
-
-type CachedUserDetails = {
-    details: UserDetails;
-    fetchedAt: number;
-};
+type CachedPage = { total: number; users: User[]; fetchedAt: number };
+type CachedUserDetails = { details: UserDetails; fetchedAt: number };
 
 type UsersState = {
     pages: Record<number, CachedPage>;
@@ -35,6 +26,7 @@ type UsersState = {
     getUserDetails: (discord_id: string) => UserDetails | null;
     updateDescription: (discord_id: string, description: string | null) => Promise<void>;
     addUserLevel: (discord_id: string, level_id: number, video_url?: string, record?: number) => Promise<void>;
+    updateUserLevel: (discord_id: string, level_id: number, video_url?: string, record?: number) => Promise<void>;
     removeUserLevel: (discord_id: string, level_id: number) => Promise<void>;
 };
 
@@ -60,14 +52,14 @@ export const useUsers = create<UsersState>()(
             loadingPage: false,
             loadingUser: false,
 
-            getPage: (offset: number) => {
+            getPage: (offset) => {
                 const cached = get().pages[offset];
                 if (!cached) return null;
                 if (Date.now() - cached.fetchedAt > CACHE_TIME) return null;
                 return cached;
             },
 
-            getUserDetails: (discord_id: string) => {
+            getUserDetails: (discord_id) => {
                 const cached = get().userDetails[discord_id];
                 if (!cached) return null;
                 if (Date.now() - cached.fetchedAt > CACHE_TIME) return null;
@@ -78,9 +70,7 @@ export const useUsers = create<UsersState>()(
                 const { getPage, loadingPage } = get();
                 if (loadingPage) return Promise.reject('Already loading');
                 const cached = getPage(offset);
-                if (!force && cached) {
-                    return { total: cached.total, limit: PAGE_LIMIT, offset, users: cached.users };
-                }
+                if (!force && cached) return { total: cached.total, limit: PAGE_LIMIT, offset, users: cached.users };
                 set({ loadingPage: true });
                 try {
                     const res = await fetch(`${API_URL}/users/?limit=${PAGE_LIMIT}&offset=${offset}`);
@@ -90,8 +80,7 @@ export const useUsers = create<UsersState>()(
                         const newOrder = [...state.pageOrder.filter((o) => o !== offset), offset];
                         const { cache: evictedPages, order: evictedOrder } = evictLRU(
                             { ...state.pages, [offset]: { total: data.total, users: data.users, fetchedAt: Date.now() } },
-                            newOrder,
-                            MAX_CACHED_PAGES
+                            newOrder, MAX_CACHED_PAGES
                         );
                         return { pages: evictedPages as Record<number, CachedPage>, pageOrder: evictedOrder as number[], loadingPage: false };
                     });
@@ -102,7 +91,7 @@ export const useUsers = create<UsersState>()(
                 }
             },
 
-            loadUserDetails: async (discord_id: string, force = false) => {
+            loadUserDetails: async (discord_id, force = false) => {
                 const { getUserDetails, loadingUser } = get();
                 if (loadingUser) return Promise.reject('Already loading');
                 const cached = getUserDetails(discord_id);
@@ -116,8 +105,7 @@ export const useUsers = create<UsersState>()(
                         const newOrder = [...state.userOrder.filter((id) => id !== discord_id), discord_id];
                         const { cache: evictedUsers, order: evictedOrder } = evictLRU(
                             { ...state.userDetails, [discord_id]: { details, fetchedAt: Date.now() } },
-                            newOrder,
-                            MAX_CACHED_USERS
+                            newOrder, MAX_CACHED_USERS
                         );
                         return { userDetails: evictedUsers as Record<string, CachedUserDetails>, userOrder: evictedOrder as string[], loadingUser: false };
                     });
@@ -128,7 +116,7 @@ export const useUsers = create<UsersState>()(
                 }
             },
 
-            updateDescription: async (discord_id: string, description: string | null) => {
+            updateDescription: async (discord_id, description) => {
                 const res = await fetch(`${API_URL}/users/${discord_id}/description`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
@@ -139,7 +127,7 @@ export const useUsers = create<UsersState>()(
                 await get().loadUserDetails(discord_id, true);
             },
 
-            addUserLevel: async (discord_id: string, level_id: number, video_url?: string, record = 100) => {
+            addUserLevel: async (discord_id, level_id, video_url, record = 100) => {
                 const res = await fetch(`${API_URL}/users/${discord_id}/levels`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -150,7 +138,18 @@ export const useUsers = create<UsersState>()(
                 await get().loadUserDetails(discord_id, true);
             },
 
-            removeUserLevel: async (discord_id: string, level_id: number) => {
+            updateUserLevel: async (discord_id, level_id, video_url, record = 100) => {
+                const res = await fetch(`${API_URL}/users/${discord_id}/levels/${level_id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ video_url: video_url || null, record }),
+                });
+                if (!res.ok) throw new Error('Failed to update level');
+                await get().loadUserDetails(discord_id, true);
+            },
+
+            removeUserLevel: async (discord_id, level_id) => {
                 const res = await fetch(`${API_URL}/users/${discord_id}/levels/${level_id}`, {
                     method: 'DELETE',
                     credentials: 'include',
