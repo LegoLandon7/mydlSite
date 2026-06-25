@@ -2,17 +2,16 @@ import './NavBar.scss';
 
 import PlaceHolderLogo from '../..//assets/images/placeholder.png';
 
-import { NavLink } from 'react-router';
+import { NavLink, useLocation } from 'react-router';
 import { useState, useRef, useEffect } from 'react';
 
 import { useAuth } from '../../api/call/auth/auth';
 import { useAuthActions } from '../../api/call/auth/authActions';
 
-
 export default function NavBar() {
     const user = useAuth((s) => s.user);
-
     const { login, logout } = useAuthActions();
+    const location = useLocation();
 
     const [desktopDropdown, setDesktopDropdown] = useState(false);
     const [mobileDropdown, setMobileDropdown]   = useState(false);
@@ -37,20 +36,23 @@ export default function NavBar() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // matches a link active if current path starts with the link's base path
+    const isSectionActive = (base: string) => location.pathname.startsWith(base);
+
     const navLinks = (onClick?: () => void) => (
         <>
-            <NavLink to="/" onClick={onClick}>Home</NavLink>
-            <NavLink to="/users" onClick={onClick}>Users</NavLink>
-            <NavLink to="/lists" onClick={onClick}>Lists</NavLink>
-            <NavLink to="/levels" onClick={onClick}>Levels</NavLink>
+            <NavLink to="/" onClick={onClick} end>Home</NavLink>
+            <NavLink to="/users" onClick={onClick} className={() => isSectionActive('/users') ? 'active' : ''}>Users</NavLink>
+            <NavLink to="/lists" onClick={onClick} className={() => isSectionActive('/lists') ? 'active' : ''}>Lists</NavLink>
+            <NavLink to="/levels" onClick={onClick} className={() => isSectionActive('/levels') ? 'active' : ''}>Levels</NavLink>
         </>
     );
 
     const profileDropdown = (open: boolean, onLinkClick: () => void) => (
         <div className={`dropdown ${open ? 'open' : ''}`}>
-            <NavLink to={`/users/${user?.discord_id}`} onClick={onLinkClick} end>My Profile</NavLink>
+            <NavLink to={`/users/${user?.discord_id}/details`} onClick={onLinkClick}>My Profile</NavLink>
             <NavLink to={`/users/${user?.discord_id}/levels`} onClick={onLinkClick}>My Levels</NavLink>
-            <NavLink to={`/users//${user?.discord_id}/lists`} onClick={onLinkClick}>My Lists</NavLink>
+            <NavLink to={`/users/${user?.discord_id}/lists`} onClick={onLinkClick}>My Lists</NavLink>
             <hr />
             <button className="logout-btn" onClick={() => { logout(); onLinkClick(); }}>Logout</button>
         </div>

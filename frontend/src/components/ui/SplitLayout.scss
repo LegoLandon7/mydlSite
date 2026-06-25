@@ -30,7 +30,7 @@
     background: $background-subtle;
     border: 3px solid $border-strong;
     border-radius: $radius-sm;
-    padding: $space-md;
+    padding: $space-xs;
 
     display: flex;
     flex-direction: column;
@@ -40,13 +40,27 @@
 
 @media (max-width: $mobile-breakpoint) {
     .split-layout {
+        position: relative;
         overflow-x: auto;
         overflow-y: hidden;
         scroll-snap-type: x mandatory;
         scroll-behavior: smooth;
         gap: 7.5vw;
-        padding-inline: 7.5vw;
+        // padding-inline: 7.5vw;
         height: 70vh;
+
+        // scroll hint: fades edge to show more content exists
+        &::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 24px;
+            height: 100%;
+            background: linear-gradient(to right, transparent, $background-color);
+            pointer-events: none;
+            z-index: 5;
+        }
     }
 
     .split-menu,
@@ -55,4 +69,28 @@
         height: 100%;
         scroll-snap-align: center;
     }
+
+    .scroll-hint {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: $space-xs;
+        padding: $space-xs;
+        color: $text-muted;
+        font-size: $font-xs;
+
+        span {
+            display: inline-block;
+            animation: bounce-x 1.4s ease-in-out infinite;
+        }
+    }
+}
+
+@media (min-width: ($mobile-breakpoint + 1)) {
+    .scroll-hint { display: none; }
+}
+
+@keyframes bounce-x {
+    0%, 100% { transform: translateX(0); opacity: 0.5; }
+    50% { transform: translateX(6px); opacity: 1; }
 }

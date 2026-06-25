@@ -1,17 +1,18 @@
 import './SplitLayout.scss';
-import { useRef } from 'react';
+import { forwardRef } from 'react';
 
 type SplitLayoutProps = {
     menu: React.ReactNode;
     page: React.ReactNode;
 };
 
-export default function SplitLayout({ menu, page }: SplitLayoutProps) {
-    const ref = useRef<HTMLDivElement>(null);
+const SplitLayout = forwardRef<HTMLDivElement, SplitLayoutProps>(function SplitLayout({ menu, page }, ref) {
     return (
         <div className="split-layout" ref={ref}>
-            <aside className="split-menu">{menu}</aside>
             <section className="split-page">{page}</section>
+            <aside className="split-menu">{menu}</aside>
         </div>
     );
-}
+});
+
+export default SplitLayout;

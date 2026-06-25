@@ -1,10 +1,11 @@
 import os
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
 from database.db import init_db
+from aredl.fetch_list import populate_database
 
 load_dotenv()
 
@@ -28,9 +29,20 @@ app.add_middleware(
     max_age=60 * 60 * 24 * 7 # 7 weeks
 )
 
+AREDL_SYNC_INTERVAL = 60 * 60 * 12  # 12 hours
+
+async def aredl_sync_loop():
+    while True:
+        try:
+            await populate_database()
+        except Exception as e:
+            print(f"[ERROR] AREDL sync failed: {e}")
+        await asyncio.sleep(AREDL_SYNC_INTERVAL)
+
 @app.on_event("startup")
 async def startup():
     await init_db()
+    asyncio.create_task(aredl_sync_loop())
 
 app.include_router(auth.router)
 app.include_router(levels.router)

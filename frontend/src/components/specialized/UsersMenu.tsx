@@ -1,6 +1,6 @@
 import './UsersMenu.scss';
 import { NavLink, useNavigate, useParams } from 'react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import SplitLayout from '../ui/SplitLayout';
 import MenuSearch from '../ui/MenuSearch';
@@ -66,6 +66,7 @@ export default function UsersMenu() {
     const activeTab = tab ?? 'details';
     const navigate = useNavigate();
     const offset = page * PAGE_LIMIT;
+    const layoutRef = useRef<HTMLDivElement>(null);
 
     const { user } = useAuth();
     const { showToast } = useToast();
@@ -86,6 +87,20 @@ export default function UsersMenu() {
     useEffect(() => {
         if (showAddLevel) loadLevels();
     }, [showAddLevel]);
+
+    // auto-select first user when none chosen
+    useEffect(() => {
+        if (!id && users.length > 0) {
+            navigate(`/users/${users[0].discord_id}/details`, { replace: true });
+        }
+    }, [id, users]);
+
+    const scrollToPage = () => {
+        const el = layoutRef.current;
+        if (el && window.innerWidth <= 768) {
+            el.scrollTo({ left: 0, behavior: 'smooth' });
+        }
+    };
 
     const handleRefreshMenu = () =>
         loadPage(offset, true).then((d) => { setUsers(d.users); setTotal(d.total); }).catch(() => {});
@@ -178,6 +193,7 @@ export default function UsersMenu() {
                         <NavLink
                             key={u.discord_id}
                             to={`/users/${u.discord_id}/details`}
+                            onClick={scrollToPage}
                             className={({ isActive }) => `menu-item${isActive ? ' active' : ''}`}
                         >
                             {u.avatar_url && <img src={u.avatar_url} alt={u.username} className="menu-avatar" />}
@@ -222,104 +238,104 @@ export default function UsersMenu() {
         );
 
         return (
-            <>
-                <PageTabs
-                    tabs={TABS}
-                    active={activeTab}
-                    onSelect={handleTabChange}
-                    right={
-                        <>
-                            <ShareButton />
-                            <IconButton onClick={handleRefreshUser} title="Refresh">↺</IconButton>
-                        </>
-                    }
-                />
+            <div
+                className="level-page-inner"
+            >
+                <div className="level-page-overlay">
+                    <PageTabs
+                        tabs={TABS}
+                        active={activeTab}
+                        onSelect={handleTabChange}
+                        right={
+                            <>
+                                <ShareButton />
+                                <IconButton onClick={handleRefreshUser} title="Refresh">↺</IconButton>
+                            </>
+                        }
+                    />
 
-                {activeTab === 'details' && (
-                    <div className="tab-content">
-                        <h1 className="user-heading">{details.user.username}</h1>
+                    {activeTab === 'details' && (
+                        <div className="tab-content">
+                            <h1 className="user-heading"><img src={user?.avatar_url}></img>{details.user.username}</h1>
 
-                        {details.user.avatar_url && (
-                            <img className="user-avatar-lg" src={details.user.avatar_url} alt={details.user.username} />
-                        )}
-
-                        <div className="info-card">
-                            <div className="info-row"><span>Username</span><strong>{details.user.username}</strong></div>
-                            <div className="info-row"><span>Discord ID</span><strong>{details.user.discord_id}</strong></div>
-                            {details.admin && (
-                                <div className="info-row">
-                                    <span>Role</span>
-                                    <strong>{details.owner ? '👑 Owner' : '🛡️ Admin'}</strong>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="info-card desc-card">
-                            <div className="desc-body">
-                                {details.user.description
-                                    ? <p>{details.user.description}</p>
-                                    : <p className="muted">no description yet</p>
-                                }
-                            </div>
-                            {canEdit && (
-                                <button className="edit-desc-btn" onClick={() => {
-                                    setDescInput(details.user.description ?? '');
-                                    setShowDescModal(true);
-                                }}>
-                                    ✎ Edit
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'levels' && (
-                    <div className="tab-content">
-                        <div className="tab-header">
-                            <h2>Levels</h2>
-                            {canEdit && (
-                                <button className="add-btn" onClick={() => setShowAddLevel(true)}>+ Add Level</button>
-                            )}
-                        </div>
-                        {details.levels && details.levels.length > 0 ? (
-                            <div className="level-list">
-                                {details.levels.map((entry) => (
-                                    <LevelCard
-                                        key={entry.level.level_id}
-                                        placement={entry.level.position}
-                                        title={entry.level.name}
-                                        imageUrl={entry.level.thumbnail_url ?? undefined}
-                                        videoUrl={entry.video_url}
-                                        record={entry.record}
-                                        infoUrl={`/levels/${entry.level.level_id}`}
-                                        onEdit={canEdit ? () => openEdit(entry) : undefined}
-                                        onRemove={canEdit ? () => handleRemoveLevel(entry.level.level_id) : undefined}
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="page-empty"><p>No levels added yet</p></div>
-                        )}
-                    </div>
-                )}
-
-                {activeTab === 'lists' && (
-                    <div className="tab-content">
-                        <h2>Lists</h2>
-                        {details.lists && details.lists.length > 0 ? (
-                            <div className="info-card">
-                                {details.lists.map((list) => (
-                                    <div className="info-row" key={list.list_id}>
-                                        <strong>{list.name}</strong>
+                            <div className="level-info-card">
+                                <div className="info-row"><span>Username</span><strong>{details.user.username}</strong></div>
+                                <div className="info-row"><span>Discord ID</span><strong>{details.user.discord_id}</strong></div>
+                                {details.admin && (
+                                    <div className="info-row">
+                                        <span>Role</span>
+                                        <strong>{details.owner ? '👑 Owner' : '🛡️ Admin'}</strong>
                                     </div>
-                                ))}
+                                )}
                             </div>
-                        ) : (
-                            <div className="page-empty"><p>No lists found</p></div>
-                        )}
-                    </div>
-                )}
-            </>
+
+                            <div className="level-info-card desc-card">
+                                <div className="desc-body">
+                                    {details.user.description
+                                        ? <p>{details.user.description}</p>
+                                        : <p className="muted">no description yet</p>
+                                    }
+                                </div>
+                                {canEdit && (
+                                    <button className="edit-desc-btn" onClick={() => {
+                                        setDescInput(details.user.description ?? '');
+                                        setShowDescModal(true);
+                                    }}>
+                                        ✎ Edit
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'levels' && (
+                        <div className="tab-content">
+                            <div className="tab-header">
+                                <h2>Levels</h2>
+                                {canEdit && (
+                                    <button className="add-btn" onClick={() => setShowAddLevel(true)}>+ Add Level</button>
+                                )}
+                            </div>
+                            {details.levels && details.levels.length > 0 ? (
+                                <div className="level-list">
+                                    {details.levels.map((entry) => (
+                                        <LevelCard
+                                            key={entry.level.level_id}
+                                            placement={entry.level.position}
+                                            title={entry.level.name}
+                                            imageUrl={entry.level.thumbnail_url ?? undefined}
+                                            videoUrl={entry.video_url}
+                                            record={entry.record}
+                                            infoUrl={`/levels/${entry.level.level_id}`}
+                                            onEdit={canEdit ? () => openEdit(entry) : undefined}
+                                            onRemove={canEdit ? () => handleRemoveLevel(entry.level.level_id) : undefined}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="page-empty"><p>No levels added yet</p></div>
+                            )}
+                        </div>
+                    )}
+
+                    {activeTab === 'lists' && (
+                        <div className="tab-content">
+                            <h2>Lists</h2>
+                            {details.lists && details.lists.length > 0 ? (
+                                <div className="level-info-card">
+                                    {details.lists.map((list) => (
+                                        <div className="info-row" key={list.list_id}>
+                                            <strong>{list.name}</strong>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="page-empty"><p>No lists found</p></div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
         );
     };
 
@@ -375,7 +391,8 @@ export default function UsersMenu() {
                 />
             )}
 
-            <SplitLayout menu={menu} page={renderPage()} />
+            {/* <p className="scroll-hint"><span>← swipe for menu →</span></p> */}
+            <SplitLayout ref={layoutRef} menu={menu} page={renderPage()} />
         </>
     );
 }

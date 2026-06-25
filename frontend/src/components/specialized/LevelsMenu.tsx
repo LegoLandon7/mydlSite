@@ -1,19 +1,12 @@
 import './LevelsMenu.scss';
 import { NavLink, useNavigate, useParams } from 'react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import SplitLayout from '../ui/SplitLayout';
 import MenuSearch from '../ui/MenuSearch';
-import IconButton from '../ui/IconButton';
 import ShareButton from '../ui/ShareButton';
-import Modal from '../ui/Modal';
-import SiteHeader from '../web/SiteHeader';
 
 import { useLevels } from '../../api/call/levels/levelsStore';
-import { useAuth } from '../../api/call/auth/auth';
-import { useToast } from '../../util/useToast';
-
-import type { Level } from '../../api/types/levels';
 
 export default function LevelsMenu() {
     const levels = useLevels((s) => s.levels);
@@ -23,8 +16,7 @@ export default function LevelsMenu() {
     useEffect(() => { loadLevels(); }, []);
 
     const [searchText, setSearchText] = useState('');
-    const [showModal, setShowModal] = useState(false);
-    const [inputLevel, setInputLevel] = useState<Partial<Level>>({});
+    const layoutRef = useRef<HTMLDivElement>(null);
 
     const { id } = useParams();
     const navigate = useNavigate();
@@ -32,9 +24,7 @@ export default function LevelsMenu() {
     const level = numericId ? levels.find((l) => l.level_id === numericId) : undefined;
     const query = searchText.toLowerCase();
 
-    const { user } = useAuth();
-    const { showToast } = useToast();
-
+    // auto-select first level when none chosen
     useEffect(() => {
         if (!id && levels.length > 0) {
             const first = levels.find((l) => l.position === 1) ?? levels[0];
@@ -42,12 +32,12 @@ export default function LevelsMenu() {
         }
     }, [id, levels]);
 
-    const handleSubmit = () => {
-        if (!inputLevel.level_id) { showToast('Level ID is required', 'error'); return; }
-        if (!inputLevel.name?.trim()) { showToast('Level name is required', 'error'); return; }
-        showToast('Level submitted for review', 'success');
-        setInputLevel({});
-        setShowModal(false);
+    // on mobile, scroll back to the page panel when a level is picked
+    const scrollToPage = () => {
+        const el = layoutRef.current;
+        if (el && window.innerWidth <= 768) {
+            el.scrollTo({ left: 0, behavior: 'smooth' });
+        }
     };
 
     const filtered = levels.filter((l) =>
@@ -58,12 +48,6 @@ export default function LevelsMenu() {
 
     const menu = (
         <>
-            <button
-                className="request-btn"
-                onClick={() => user ? setShowModal(true) : showToast('You must be logged in', 'error')}
-            >
-                Request New Level +
-            </button>
             <MenuSearch
                 value={searchText}
                 onChange={setSearchText}
@@ -74,6 +58,7 @@ export default function LevelsMenu() {
                     <NavLink
                         key={l.level_id}
                         to={`/levels/${l.level_id}`}
+                        onClick={scrollToPage}
                         className={({ isActive }) => `menu-item${isActive ? ' active' : ''}`}
                     >
                         <span className="pos">#{l.position}</span>
@@ -136,63 +121,8 @@ export default function LevelsMenu() {
 
     return (
         <>
-            {showModal && (
-                <Modal onClose={() => { setShowModal(false); setInputLevel({}); }}>
-                    <SiteHeader
-                        head="Request New Level"
-                        subhead="our admin team will review your submission"
-                    />
-                    <div className="request-fields">
-                        <div className="fields-row">
-                            <div className="field">
-                                <label>level id <span className="req">*</span></label>
-                                <input
-                                    maxLength={11}
-                                    value={inputLevel.level_id ?? ''}
-                                    onChange={(e) => setInputLevel({ ...inputLevel, level_id: Number(e.target.value.replace(/\D/g, '')) })}
-                                />
-                            </div>
-                            <div className="field">
-                                <label>level name <span className="req">*</span></label>
-                                <input
-                                    maxLength={25}
-                                    value={inputLevel.name ?? ''}
-                                    onChange={(e) => setInputLevel({ ...inputLevel, name: e.target.value })}
-                                />
-                            </div>
-                            <div className="field">
-                                <label>estimated position</label>
-                                <input
-                                    maxLength={6}
-                                    value={inputLevel.position ?? ''}
-                                    onChange={(e) => setInputLevel({ ...inputLevel, position: Number(e.target.value.replace(/\D/g, '')) })}
-                                />
-                            </div>
-                            <div className="field">
-                                <label>thumbnail url</label>
-                                <input
-                                    value={inputLevel.thumbnail_url ?? ''}
-                                    onChange={(e) => setInputLevel({ ...inputLevel, thumbnail_url: e.target.value })}
-                                />
-                            </div>
-                        </div>
-                        <div className="field full">
-                            <label>description</label>
-                            <textarea
-                                maxLength={500}
-                                value={inputLevel.description ?? ''}
-                                onChange={(e) => setInputLevel({ ...inputLevel, description: e.target.value })}
-                            />
-                        </div>
-                    </div>
-                    <div className="modal-buttons">
-                        <button className="btn-primary" onClick={handleSubmit}>Submit Level</button>
-                        <button onClick={() => { setShowModal(false); setInputLevel({}); }}>Cancel</button>
-                    </div>
-                </Modal>
-            )}
-
-            <SplitLayout menu={menu} page={renderPage()} />
+            {/* <p className="scroll-hint"><span>← swipe for menu →</span></p> */}
+            <SplitLayout ref={layoutRef} menu={menu} page={renderPage()} />
         </>
     );
 }

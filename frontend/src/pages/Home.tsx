@@ -12,7 +12,8 @@ export default function Home() {
 
     <SiteHeader 
     head="Make Your Own Demon List (MYODL)" 
-    subhead="A website to collaborate and track demon progression" />
+    subhead="A website to collaborate and track demon progression (THIS WEBSITE IS NO WHERE NEAR DONE AND ALSO USED SOME AI AS WELL (i WILL redo this with ZERO ai once i get this slop site up :) ), I AM STILL LEARNING WEB DEVELOPMENT AND THIS MAY TAKE A WHILE TO FULLY COME OUT AND BE POLISHED" 
+    />
     
     <SiteSection
       head="About MYODL"

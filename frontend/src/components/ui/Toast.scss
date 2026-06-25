@@ -9,7 +9,7 @@
     flex-direction: column;
     gap: $space-sm;
 
-    z-index: 5000;
+    z-index: 99999;
     pointer-events: none;
 }
 

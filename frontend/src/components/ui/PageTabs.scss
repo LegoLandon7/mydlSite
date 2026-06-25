@@ -12,6 +12,7 @@
 
     .tabs {
         display: flex;
+        flex-wrap: wrap;
         gap: $space-xs;
 
         button {
@@ -36,6 +37,6 @@
     .tabs-right {
         display: flex;
         align-items: center;
-        gap: $space-sm;
+        gap: $space-sm;;
     }
 }

@@ -40,11 +40,15 @@ export default function EditLevelModal({
                 <div className="field">
                     <label>record <span className="hint">1–100%</span></label>
                     <input
-                        type="number"
-                        min={1}
-                        max={100}
+                        type="text"
+                        inputMode="numeric"
                         value={record}
-                        onChange={(e) => onRecordChange(Math.min(100, Math.max(1, Number(e.target.value))))}
+                        onChange={(e) => {
+                            const digits = e.target.value.replace(/\D/g, '');
+                            if (digits === '') { onRecordChange(0); return; }
+                            onRecordChange(Number(digits));
+                        }}
+                        onBlur={() => onRecordChange(Math.min(100, Math.max(1, record)))}
                     />
                 </div>
             </div>

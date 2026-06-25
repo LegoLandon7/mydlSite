@@ -40,7 +40,7 @@ export default function AddLevelModal({
             l.position.toString().includes(q) ||
             l.level_id.toString().includes(q)
         );
-    }).slice(0, 50);
+    });
 
     return (
         <Modal onClose={onClose}>
@@ -94,11 +94,15 @@ export default function AddLevelModal({
                     <div className="field">
                         <label>record <span className="hint">1–100%</span></label>
                         <input
-                            type="number"
-                            min={1}
-                            max={100}
+                            type="text"
+                            inputMode="numeric"
                             value={record}
-                            onChange={(e) => onRecord(Math.min(100, Math.max(1, Number(e.target.value))))}
+                            onChange={(e) => {
+                                const digits = e.target.value.replace(/\D/g, '');
+                                if (digits === '') { onRecord(0); return; }
+                                onRecord(Number(digits));
+                            }}
+                            onBlur={() => onRecord(Math.min(100, Math.max(1, record)))}
                         />
                     </div>
                 </div>
