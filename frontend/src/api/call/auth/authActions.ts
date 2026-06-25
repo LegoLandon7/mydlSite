@@ -19,7 +19,7 @@ export function useAuthActions() {
 
     const login = (redirectTo = "/") => {
         sessionStorage.setItem("justLoggedIn", "1");
-        window.location.href = `https://api.myodl,net/auth/login?redirect=${encodeURIComponent(redirectTo)}`;
+        window.location.href = `https://api.myodl.net/auth/login?redirect=${encodeURIComponent(redirectTo)}`;
     };
 
     return { login, logout };
